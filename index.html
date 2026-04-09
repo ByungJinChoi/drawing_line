@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO BLE — 손그림 주행 v9</title>
+<title>XROBO BLE — 손그림 주행 v10</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <style>
@@ -324,44 +324,108 @@
   .dropdown .menu > button:hover{ background:#f3f4f6; }
   #fileBtn{ background:#6b7280; color:#ffffff; }
 
+
   /* ── 손그림 전체 화면 ───────────────────────── */
   #drawOverlay{
     position:fixed; inset:0; z-index:10030; display:none;
     background:rgba(2,6,23,.985); color:#fff;
-    padding: max(env(safe-area-inset-top), 0px) max(env(safe-area-inset-right), 0px) max(env(safe-area-inset-bottom), 0px) max(env(safe-area-inset-left), 0px);
+    padding:max(env(safe-area-inset-top), 0px) max(env(safe-area-inset-right), 0px) max(env(safe-area-inset-bottom), 0px) max(env(safe-area-inset-left), 0px);
     overflow:hidden;
     touch-action:none;
     overscroll-behavior:none;
   }
-  #drawOverlay.show{ display:flex; flex-direction:column; }
-  #drawOverlay .drawShell{
-    flex:1 1 auto; min-height:0; display:flex; flex-direction:column;
-    gap:10px; padding:10px;
+  #drawOverlay.show{ display:block; }
+
+  #drawOverlay .drawWorkspace{
+    width:100%;
+    height:100%;
+    display:grid;
+    grid-template-columns:1fr;
+    grid-template-rows:auto minmax(0,1fr) auto;
+    gap:10px;
+    padding:10px;
   }
-  #drawOverlay .drawHeader{
-    display:flex; align-items:flex-start; justify-content:space-between;
-    gap:10px; flex-wrap:wrap;
+  #drawOverlay .drawSide{
+    min-width:0;
+    min-height:0;
+    display:grid;
+    gap:10px;
   }
-  #drawOverlay .drawTitleWrap{ min-width:0; }
+  #drawOverlay .drawSideLeft{
+    grid-template-columns:1fr;
+  }
+  #drawOverlay .drawSideRight{
+    grid-template-columns:1fr;
+  }
+  #drawOverlay .drawPaneCard{
+    border-radius:18px;
+    background:rgba(15,23,42,.92);
+    border:1px solid rgba(148,163,184,.24);
+    box-shadow:0 14px 30px rgba(0,0,0,.24);
+    padding:14px;
+    min-width:0;
+    min-height:0;
+  }
+  #drawOverlay .drawTitleCard{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
   #drawOverlay .drawTitle{
-    font-size:20px; font-weight:800; color:#f8fafc; margin-bottom:4px;
+    font-size:20px;
+    font-weight:800;
+    color:#f8fafc;
   }
   #drawOverlay .drawSubtitle{
-    font-size:12px; color:#cbd5e1; line-height:1.45;
+    font-size:12px;
+    color:#cbd5e1;
+    line-height:1.6;
   }
   #drawOverlay .drawHeaderBtns{
-    display:flex; gap:8px; flex-wrap:wrap;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:8px;
   }
+  #drawOverlay .drawHelpTitle,
+  #drawOverlay .overlayPaneTitle{
+    font-size:12px;
+    font-weight:800;
+    color:#e2e8f0;
+    margin-bottom:6px;
+  }
+  #drawOverlay .drawHelpText{
+    font-size:12px;
+    color:#cbd5e1;
+    line-height:1.6;
+    white-space:pre-wrap;
+  }
+
   #drawClearBtn{ background:#475569; color:#fff; }
   #drawAnalyzeBtn{ background:#0ea5e9; color:#fff; }
   #drawExecuteBtn{ background:#16a34a; color:#fff; }
   #drawExecuteBtn.stop{ background:#ef4444; color:#fff; }
   #drawCloseBtn{ background:#111827; color:#fff; }
 
-  #drawOverlay .drawStage{
-    position:relative;
-    flex:1 1 auto;
+  #drawOverlay .drawCenter{
+    min-width:0;
     min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #drawStageWrap{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+    min-height:0;
+  }
+  #drawStage{
+    position:relative;
+    width:100%;
+    height:100%;
     border-radius:20px;
     overflow:hidden;
     background:linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.98));
@@ -382,51 +446,97 @@
     padding:6px 12px; border-radius:999px;
     background:rgba(15,23,42,.78); border:1px solid rgba(148,163,184,.38);
     color:#e2e8f0; font-size:12px; font-weight:700; pointer-events:none;
+    white-space:nowrap;
   }
   #drawStageHelp{
-    position:absolute; left:14px; bottom:14px;
+    position:absolute; left:14px; right:14px; bottom:14px;
     padding:8px 10px; border-radius:12px;
     background:rgba(2,6,23,.72); border:1px solid rgba(148,163,184,.28);
-    color:#cbd5e1; font-size:12px; line-height:1.45;
-    pointer-events:none; max-width:min(420px, 86%);
+    color:#cbd5e1; font-size:12px; line-height:1.5;
+    pointer-events:none;
   }
-  #drawOverlayInfo{
-    flex:0 0 auto;
-    display:grid;
-    grid-template-columns:minmax(0,1fr);
-    gap:8px;
-  }
-  #overlaySummary, #overlayPreview{
-    border-radius:14px;
-    background:rgba(15,23,42,.92);
-    border:1px solid rgba(148,163,184,.24);
-    padding:12px 14px;
-    white-space:pre-wrap;
+
+  #overlaySummary, #overlayPreview, #overlaySerialLog{
+    min-height:0;
     overflow:auto;
+    white-space:pre-wrap;
   }
   #overlaySummary{
     color:#e2e8f0;
     font-size:12px;
-    line-height:1.55;
-    max-height:110px;
+    line-height:1.6;
   }
   #overlayPreview{
     color:#93c5fd;
     font-size:11px;
+    line-height:1.5;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .drawSerialCard{
+    display:flex;
+    flex-direction:column;
+    min-height:160px;
+  }
+  #overlaySerialLog{
+    flex:1 1 auto;
+    border-radius:12px;
+    background:#020617;
+    border:1px solid rgba(148,163,184,.18);
+    padding:10px;
+    color:#d1e4ff;
+    font-size:11px;
     line-height:1.45;
     font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    max-height:120px;
+  }
+
+  @media (orientation: landscape) and (min-width: 900px){
+    #drawOverlay .drawWorkspace{
+      grid-template-columns:minmax(240px, 26vw) minmax(0,1fr) minmax(260px, 28vw);
+      grid-template-rows:minmax(0,1fr);
+      align-items:center;
+    }
+    #drawOverlay .drawSideLeft{
+      align-content:center;
+    }
+    #drawOverlay .drawSideRight{
+      grid-template-rows:minmax(0, .9fr) minmax(0, .9fr) minmax(180px, 1.2fr);
+      height:100%;
+    }
+    #drawOverlay .drawCenter{
+      height:100%;
+    }
+    #drawStageBadge{ font-size:11px; }
+  }
+
+  @media (max-width: 899px), (orientation: portrait){
+    #drawOverlay .drawWorkspace{
+      grid-template-columns:1fr;
+      grid-template-rows:auto minmax(0,1fr) auto;
+    }
+    #drawOverlay .drawHeaderBtns{
+      grid-template-columns:repeat(4, minmax(0,1fr));
+    }
+    #drawOverlay .drawSideRight{
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+    #overlaySummary{ max-height:90px; }
+    #overlayPreview{ max-height:84px; }
+    #overlaySerialLog{ max-height:96px; }
   }
 
   @media (max-width: 640px){
-    #drawOverlay .drawShell{ padding:8px; gap:8px; }
+    #drawOverlay .drawWorkspace{ padding:8px; gap:8px; }
+    #drawOverlay .drawPaneCard{ padding:12px; border-radius:16px; }
     #drawOverlay .drawTitle{ font-size:18px; }
-    #drawOverlay .drawStage{ border-radius:16px; }
-    #drawStageBadge{ font-size:11px; }
-    #drawStageHelp{ font-size:11px; max-width:88%; }
-    #overlaySummary{ max-height:96px; }
-    #overlayPreview{ max-height:96px; }
+    #drawOverlay .drawSubtitle,
+    #drawOverlay .drawHelpText,
+    #overlaySummary{ font-size:11px; }
+    #overlayPreview, #overlaySerialLog{ font-size:10px; }
+    #drawStageHelp{ font-size:11px; }
+    #drawStageBadge{ font-size:10px; padding:5px 10px; }
   }
+
 </style>
 
 <style id="xrobo-hsplit-style">
@@ -485,7 +595,7 @@
 <body>
   <header id="appHeader">
     <div id="topbar">
-      <div class="title">XROBO BLE — 손그림 주행 v9</div>
+      <div class="title">XROBO BLE — 손그림 주행 v10</div>
       <div class="spacer"></div>
 
       <div class="dropdown" id="fileDropdown">
@@ -519,7 +629,8 @@
             <div class="drawPanelTitle">손그림 실행 설정</div>
             <div class="drawPanelSubtitle">
               자이로 기능은 제거했습니다. 화면에 선을 그리고 손을 떼면 자동으로 분석합니다.
-              회전 시간은 꺾이는 각도가 아니라, 방향을 바꾸기 전에 잠깐 멈춘 시간으로 계산합니다.
+              회전 시간은 꺾이는 각도가 아니라, 방향을 바꾸기 전에 잠깐 멈춘 시간으로 계산하고,
+              회전 속도도 꺾이기 직전 손으로 그린 속도를 기준으로 함께 바뀝니다.
             </div>
           </div>
 
@@ -529,7 +640,7 @@
             <button id="executePanelBtn" class="btn">로봇 실행</button>
           </div>
 
-          <div id="motionProfileInfo" class="profileBox">모터 속도 설정 블록이 없어서 기본값을 사용합니다.</div>
+          <div id="motionProfileInfo" class="profileBox">모터 속도 설정 블록이 없어서 기본 최대 속도를 사용합니다.</div>
 
           <details id="drawSettings">
             <summary>세부 설정</summary>
@@ -585,7 +696,8 @@
 
           <div id="drawSummary" class="summaryCard">화면에 손으로 선을 한 번 그려 주세요.
 예: ㄱ자 → 전진 → 우회전 → 전진
-직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.</div>
+직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용되고,
+회전 속도는 꺾이기 직전 손속도를 기준으로 같이 바뀝니다.</div>
 
           <div id="drawCommandPreview" class="previewCard">명령 미리보기: -</div>
         </div>
@@ -600,10 +712,7 @@
   </div>
 
   <xml id="toolbox" style="display:none">
-    <category name="이벤트" colour="#f59e0b">
-      <block type="xrobo_start"></block>
-    </category>
-    <category name="설정" colour="#8b5cf6">
+<category name="설정" colour="#8b5cf6">
       <block type="motion_speed_profile"></block>
     </category>
     <category name="출력" colour="#60a5fa">
@@ -636,36 +745,58 @@
     </category>
   </xml>
 
+  
   <div id="drawOverlay" aria-hidden="true">
-    <div class="drawShell">
-      <div class="drawHeader">
-        <div class="drawTitleWrap">
+    <div class="drawWorkspace">
+      <aside class="drawSide drawSideLeft">
+        <div class="drawPaneCard drawTitleCard">
           <div class="drawTitle">손그림 실행</div>
           <div class="drawSubtitle">
-            화면을 드래그해서 움직이지 않도록 전체 화면으로 꽉 차게 만들었습니다.
-            선을 다 그린 뒤 분석하거나 바로 로봇 실행을 누르면 BLE 명령을 실제로 보냅니다.
+            가로 화면에서는 가운데에 정사각형 그리기창이 오도록 배치했습니다.
+            왼쪽은 설명과 버튼, 오른쪽은 해석 결과와 시리얼 로그를 보여 줍니다.
+          </div>
+          <div class="drawHeaderBtns">
+            <button id="drawClearBtn" class="btn">지우기</button>
+            <button id="drawAnalyzeBtn" class="btn">분석</button>
+            <button id="drawExecuteBtn" class="btn">로봇 실행</button>
+            <button id="drawCloseBtn" class="btn">닫기</button>
           </div>
         </div>
-        <div class="drawHeaderBtns">
-          <button id="drawClearBtn" class="btn">지우기</button>
-          <button id="drawAnalyzeBtn" class="btn">분석</button>
-          <button id="drawExecuteBtn" class="btn">로봇 실행</button>
-          <button id="drawCloseBtn" class="btn">닫기</button>
+        <div class="drawPaneCard">
+          <div class="drawHelpTitle">그리는 방법</div>
+          <div class="drawHelpText">위쪽이 로봇의 시작 방향입니다.
+직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.
+회전 속도는 꺾이기 직전 선을 그릴 때의 손속도를 기준으로 정합니다.</div>
         </div>
-      </div>
+      </aside>
 
-      <div class="drawStage" id="drawStage">
-        <canvas id="drawCanvas"></canvas>
-        <div id="drawStageBadge">↑ 위쪽이 로봇의 시작 방향</div>
-        <div id="drawStageHelp">직선을 그리고 꺾기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.</div>
-      </div>
+      <section class="drawCenter" id="drawCenter">
+        <div id="drawStageWrap">
+          <div id="drawStage">
+            <canvas id="drawCanvas"></canvas>
+            <div id="drawStageBadge">↑ 위쪽이 로봇의 시작 방향</div>
+            <div id="drawStageHelp">직선을 그리고 꺾기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.</div>
+          </div>
+        </div>
+      </section>
 
-      <div id="drawOverlayInfo">
-        <div id="overlaySummary">화면에 선을 그리면 여기에 해석 결과가 표시됩니다.</div>
-        <div id="overlayPreview">명령 미리보기: -</div>
-      </div>
+      <aside class="drawSide drawSideRight">
+        <div class="drawPaneCard">
+          <div class="overlayPaneTitle">해석 결과</div>
+          <div id="overlaySummary">화면에 선을 그리면 여기에 해석 결과가 표시됩니다.</div>
+        </div>
+        <div class="drawPaneCard">
+          <div class="overlayPaneTitle">명령 미리보기</div>
+          <div id="overlayPreview">명령 미리보기: -</div>
+        </div>
+        <div class="drawPaneCard drawSerialCard">
+          <div class="overlayPaneTitle">시리얼 로그</div>
+          <div id="overlaySerialLog"></div>
+        </div>
+      </aside>
     </div>
   </div>
+
 
 <script>
 /* ================= Blockly 기본 설정 ================= */
@@ -742,10 +873,10 @@ for(var i=0;i<MOTION_EVENT_OPTIONS.length;i++){
 }
 
 var DEFAULT_SPEED_PROFILE = {
-  forward: 14,
-  backward: 12,
-  turnLeft: 10,
-  turnRight: 10
+  forward: 20,
+  backward: 20,
+  turnLeft: 20,
+  turnRight: 20
 };
 
 function clampVal(v, min, max){
@@ -768,10 +899,10 @@ Blockly.defineBlocksWithJsonArray([
     "type":"motion_speed_profile",
     "message0":"모터 속도 설정 전진 %1 후진 %2 좌회전 %3 우회전 %4",
     "args0":[
-      { "type":"field_number","name":"FWD","value":14,"min":1,"max":20,"precision":1 },
-      { "type":"field_number","name":"BWD","value":12,"min":1,"max":20,"precision":1 },
-      { "type":"field_number","name":"TL","value":10,"min":1,"max":20,"precision":1 },
-      { "type":"field_number","name":"TR","value":10,"min":1,"max":20,"precision":1 }
+      { "type":"field_number","name":"FWD","value":20,"min":1,"max":20,"precision":1 },
+      { "type":"field_number","name":"BWD","value":20,"min":1,"max":20,"precision":1 },
+      { "type":"field_number","name":"TL","value":20,"min":1,"max":20,"precision":1 },
+      { "type":"field_number","name":"TR","value":20,"min":1,"max":20,"precision":1 }
     ],
     "previousStatement":null,
     "nextStatement":null,
@@ -974,10 +1105,18 @@ var SERVICE_UUID=0xFFF0;
 var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null;
 var isConnected=false;
 var $=id=>document.getElementById(id);
+function syncOverlaySerialLog(){
+  var mainLog = $('log');
+  var overlayLog = $('overlaySerialLog');
+  if(!mainLog || !overlayLog) return;
+  overlayLog.textContent = mainLog.textContent;
+  overlayLog.scrollTop = overlayLog.scrollHeight;
+}
 var log=function(m){
   var L=$('log');
   L.textContent+=m+"\n";
   L.scrollTop=L.scrollHeight;
+  syncOverlaySerialLog();
 };
 var dot=$('statusDot');
 var btnConnect=$('connectToggle'), btnRun=$('runToggle'), btnTest=$('testBtn');
@@ -1244,11 +1383,11 @@ async function runList(list, tokenGetter){
 function refreshMotionProfileInfo(){
   var profile = readMotionSpeedProfile();
   var lines = [];
-  lines.push('현재 모터 속도 기준');
-  lines.push('전진 ' + profile.forward + ' / 후진 ' + profile.backward + ' / 좌회전 ' + profile.turnLeft + ' / 우회전 ' + profile.turnRight);
+  lines.push('현재 모터 속도 설정');
+  lines.push('전진 최대 ' + profile.forward + ' / 후진 최대 ' + profile.backward + ' / 좌회전 최대 ' + profile.turnLeft + ' / 우회전 최대 ' + profile.turnRight);
   lines.push('사용 기준: ' + profile.source);
-  lines.push('손가락이 빠를수록 전진/후진 속도는 이 값을 기준으로 더 크게 적용됩니다.');
-  lines.push('이벤트 블록은 각 동작 직전에 함께 실행됩니다.');
+  lines.push('손가락이 빠를수록 전진 속도와 회전 속도가 함께 커집니다.');
+  lines.push('회전 속도는 꺾이기 직전 선분의 손속도를 기준으로 정합니다.');
   var box = $('motionProfileInfo');
   if(box) box.textContent = lines.join('\n');
 }
@@ -1256,6 +1395,8 @@ function refreshMotionProfileInfo(){
 /* ================= 손그림 분석/실행 ================= */
 (function(){
   var drawOverlay = $('drawOverlay');
+  var drawCenter = $('drawCenter');
+  var drawStageWrap = $('drawStageWrap');
   var drawStage = $('drawStage');
   var drawCanvas = $('drawCanvas');
   var drawSummary = $('drawSummary');
@@ -1306,7 +1447,8 @@ function refreshMotionProfileInfo(){
     setSummary(
       '화면에 손으로 선을 한 번 그려 주세요.\n' +
       '예: ㄱ자 → 전진 → 우회전 → 전진\n' +
-      '직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.'
+      '직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용되고,\n' +
+      '회전 속도는 꺾기 직전 손속도를 기준으로 정합니다.'
     );
     setPreview('명령 미리보기: -');
   }
@@ -1353,8 +1495,18 @@ function refreshMotionProfileInfo(){
       t: nowMs()
     };
   }
+  function layoutDrawStageSquare(){
+    if(!drawCenter || !drawStageWrap) return;
+    var rect = drawCenter.getBoundingClientRect();
+    if(!rect.width || !rect.height) return;
+    var size = Math.floor(Math.min(rect.width, rect.height));
+    if(size < 120) size = Math.floor(Math.min(rect.width, rect.height));
+    drawStageWrap.style.width = size + 'px';
+    drawStageWrap.style.height = size + 'px';
+  }
   function resizeDrawCanvas(){
     if(!drawStage) return;
+    layoutDrawStageSquare();
     var rect = drawStage.getBoundingClientRect();
     if(!rect.width || !rect.height) return;
     var dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -1414,6 +1566,7 @@ function refreshMotionProfileInfo(){
     drawOverlay.classList.add('show');
     drawOverlay.setAttribute('aria-hidden', 'false');
     drawState.open = true;
+    syncOverlaySerialLog();
     resizeDrawCanvas();
     renderDrawCanvas();
     if(requestFullscreen){
@@ -1664,6 +1817,7 @@ function refreshMotionProfileInfo(){
     }
     return segs.slice(0, 16);
   }
+
   function makePreviewPoints(segments){
     if(!segments || !segments.length) return [];
     var pts = [{ x: segments[0].start.x, y: segments[0].start.y }];
@@ -1679,24 +1833,23 @@ function refreshMotionProfileInfo(){
     }
     return pts;
   }
-  function mapMoveSpeed(seg, minV, maxV, baseSpeed){
-    baseSpeed = clampVal(Math.round(baseSpeed || 10), 1, 20);
-    if(!isFinite(seg.avgFingerSpeed) || seg.avgFingerSpeed <= 0){
-      return clampVal(Math.round(baseSpeed * 0.8), 1, 20);
-    }
-    if(!isFinite(minV) || !isFinite(maxV) || Math.abs(maxV - minV) < 0.02){
-      return clampVal(Math.round(baseSpeed * 0.85), 1, 20);
-    }
-    var ratio = (seg.avgFingerSpeed - minV) / (maxV - minV);
-    ratio = clampVal(ratio, 0, 1);
-    var factor = 0.55 + ratio * 0.45;
-    return clampVal(Math.round(baseSpeed * factor), 1, 20);
+  function speedRatioFromSegment(segSpeed, minV, maxV){
+    if(!isFinite(segSpeed) || segSpeed <= 0) return 0.45;
+    if(!isFinite(minV) || !isFinite(maxV) || Math.abs(maxV - minV) < 0.02) return 0.65;
+    return clampVal((segSpeed - minV) / (maxV - minV), 0, 1);
   }
-  function makeTurnCommand(delta, duration, cfg, profile){
+  function speedFromRatio(ratio, maxSpeed){
+    maxSpeed = clampVal(Math.round(maxSpeed || 20), 1, 20);
+    var minSpeed = Math.max(1, Math.round(maxSpeed * 0.25));
+    return clampVal(Math.round(minSpeed + ratio * (maxSpeed - minSpeed)), 1, maxSpeed);
+  }
+  function moveSpeedForSegment(seg, minV, maxV, maxSpeed){
+    return speedFromRatio(speedRatioFromSegment(seg.avgFingerSpeed, minV, maxV), maxSpeed);
+  }
+  function makeTurnCommand(delta, duration, turnSpeed, cfg){
     if(!delta) return null;
     var right = delta > 0;
-    var speed = right ? profile.turnRight : profile.turnLeft;
-    speed = clampVal(Math.round(speed || 10), 1, 20);
+    var speed = clampVal(Math.round(turnSpeed || 5), 1, 20);
     duration = clampVal(Math.round(duration || cfg.minTurnMs), 50, 5000);
     var m1, m2;
     if(right){
@@ -1708,12 +1861,11 @@ function refreshMotionProfileInfo(){
     }
     return {
       kind: right ? 'turn_right' : 'turn_left',
-      hook: right ? 'TURN_RIGHT' : 'TURN_LEFT',
       dir: right ? '우회전' : '좌회전',
       speed: speed,
       duration: duration,
       s: 'M12 ' + m1 + ' ' + m2 + ' ' + duration,
-      label: (right ? '우회전' : '좌회전') + '(' + duration + 'ms)'
+      label: (right ? '우회전' : '좌회전') + '(' + speed + ', ' + duration + 'ms)'
     };
   }
   function compileAnalysis(segments, cfg, profile){
@@ -1739,13 +1891,13 @@ function refreshMotionProfileInfo(){
       var seg = segments[k];
       var delta = signedTurnDelta(heading, seg.heading);
       var absDelta = Math.abs(delta);
+      var moveRatio = speedRatioFromSegment(seg.avgFingerSpeed, minV, maxV);
 
       if(absDelta >= cfg.backAngle){
-        var backSpeed = mapMoveSpeed(seg, minV, maxV, profile.backward);
+        var backSpeed = speedFromRatio(moveRatio, profile.backward);
         var backDuration = clampVal(Math.round(seg.movingTimeMs * cfg.moveTimeScale), 100, 5000);
         var backCmd = {
           kind: 'move_backward',
-          hook: 'MOVE_BACKWARD',
           speed: backSpeed,
           duration: backDuration,
           heading: heading,
@@ -1758,8 +1910,12 @@ function refreshMotionProfileInfo(){
       }
 
       if(absDelta >= 1){
+        var prevSeg = analysis.segments[Math.max(0, k - 1)] || seg;
+        var turnRatio = speedRatioFromSegment(prevSeg.avgFingerSpeed, minV, maxV);
+        var turnMax = delta > 0 ? profile.turnRight : profile.turnLeft;
+        var turnSpeed = speedFromRatio(turnRatio, turnMax);
         var turnDuration = Math.max(cfg.minTurnMs, Math.round((seg.pauseBeforeMs || 0) * cfg.pauseScale));
-        var turnCmd = makeTurnCommand(delta, turnDuration, cfg, profile);
+        var turnCmd = makeTurnCommand(delta, turnDuration, turnSpeed, cfg);
         if(turnCmd){
           analysis.commands.push(turnCmd);
           analysis.previewParts.push(turnCmd.label);
@@ -1767,11 +1923,10 @@ function refreshMotionProfileInfo(){
         heading = seg.heading;
       }
 
-      var moveSpeed = mapMoveSpeed(seg, minV, maxV, profile.forward);
+      var moveSpeed = speedFromRatio(moveRatio, profile.forward);
       var moveDuration = clampVal(Math.round(seg.movingTimeMs * cfg.moveTimeScale), 100, 5000);
       var moveCmd = {
         kind: 'move_forward',
-        hook: 'MOVE_FORWARD',
         speed: moveSpeed,
         duration: moveDuration,
         heading: seg.heading,
@@ -1837,9 +1992,9 @@ function refreshMotionProfileInfo(){
     }else{
       lines.push('회전 기준 멈춤: 감지된 멈춤 없음 → 최소 회전 시간 사용');
     }
-    lines.push('속도 기준: 전진 ' + profile.forward + ' / 후진 ' + profile.backward + ' / 좌회전 ' + profile.turnLeft + ' / 우회전 ' + profile.turnRight);
+    lines.push('최대 속도 설정: 전진 ' + profile.forward + ' / 후진 ' + profile.backward + ' / 좌회전 ' + profile.turnLeft + ' / 우회전 ' + profile.turnRight);
     lines.push('해석: ' + analysis.previewParts.join(' → '));
-    lines.push('이벤트 블록은 각 동작 직전에 실행됩니다.');
+    lines.push('회전 속도는 꺾이기 직전 선분의 손속도를 기준으로 정했습니다.');
     if(!isConnected){
       lines.push('현재 BLE가 연결되어 있지 않아 로봇 실행은 시작되지 않습니다.');
     }
@@ -2017,7 +2172,6 @@ function refreshMotionProfileInfo(){
       return;
     }
 
-    var eventPrograms = buildEventPrograms();
     drawState.executing = true;
     window.isDrawExecuting = true;
     updateExecuteButtons();
@@ -2030,12 +2184,6 @@ function refreshMotionProfileInfo(){
       for(var i=0;i<analysis.commands.length;i++){
         if(cancelled()) break;
         var cmd = analysis.commands[i];
-        var hook = eventPrograms[cmd.hook];
-        if(hook && hook.list && hook.list.length){
-          log('▶ 이벤트 실행: "' + (hook.label || cmd.hook) + '"');
-          await runList(hook.list, cancelled);
-        }
-        if(cancelled()) break;
         await sendRaw(cmd.s);
         if(cmd.duration > 0){
           await sleep(cmd.duration);
@@ -2177,6 +2325,7 @@ function refreshMotionProfileInfo(){
   refreshMotionProfileInfo();
   initialSummary();
   updateExecuteButtons();
+  syncOverlaySerialLog();
 
   window.drawApi = {
     open: openDrawOverlay,
