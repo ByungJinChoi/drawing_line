@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO BLE — 손그림 주행 v10</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>XROBO BLE — 자이로 센서 v8</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <style>
   :root{
@@ -11,6 +11,7 @@
     --uiScale: 1;
     --headerH: 64px;
     --btnH: 36px;
+
     --gap: 8px;
     --headerBgTop: #fff7ed;
     --headerBgBottom: #fffbeb;
@@ -28,31 +29,14 @@
     --triW:    calc(var(--triWBase)    * var(--uiScale) * 1px);
     --triH:    calc(var(--triHBase)    * var(--uiScale) * 1px);
     --linkBar: calc(3 * var(--uiScale) * 1px);
-
-    --appBg: #ffffff;
-    --panelBg: #ffffff;
-    --panelBorder: #e5e7eb;
-    --panelText: #111827;
-    --panelMuted: #64748b;
-    --drawCardBg: #0f172a;
-    --drawCardText: #e2e8f0;
   }
   @media (max-width: 480px){
     :root{ --btnH: 32px; }
   }
 
   *{ box-sizing:border-box; }
-  html, body{
-    height:100%;
-    overscroll-behavior:none;
-    overflow:hidden;
-  }
-  body{
-    margin:0;
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    background:var(--appBg);
-    touch-action:manipulation;
-  }
+  html, body{ height:100%; }
+  body{ margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#fff; }
 
   /* ── 헤더 ───────────────────────────────── */
   header{
@@ -81,20 +65,11 @@
     box-shadow:0 2px 8px rgba(0,0,0,.08);
     background:#f3f4f6; color:#111827; cursor:pointer;
     user-select:none;
-    white-space:nowrap;
   }
-  .btn:disabled{
-    opacity:.55;
-    cursor:not-allowed;
-  }
-  .btn.small{
-    height: calc(var(--btnH) * var(--uiScale) * .85);
-    padding: 0 calc(10px * var(--uiScale));
-    font-size: calc(12px * var(--uiScale));
-  }
+  .btn.small{ height: calc(var(--btnH) * var(--uiScale) * .85); padding: 0 calc(10px * var(--uiScale)); font-size: calc(12px * var(--uiScale)); }
   #connectToggle{ background:#2563eb; color:#fff; }
   #testBtn{ background:#0ea5e9; color:#fff; }
-  #runToggle{ background:#7c3aed; color:#fff; }
+  #runToggle{ background:#16a34a; color:#fff; }
   #fsBtn{ background:#111827; color:#fff; }
 
   .state{
@@ -121,134 +96,165 @@
   #blocklyDiv{ flex:1 1 auto; min-width:0; height:100%; width:100%; }
 
   #right{
-    flex:0 0 40%; display:flex; flex-direction:column; background:var(--panelBg);
-    margin:8px 8px 8px 0; border:1px solid var(--panelBorder); border-left:3px solid var(--blue);
+    flex:0 0 40%; display:flex; flex-direction:column; background:#fff;
+    margin:8px 8px 8px 0; border:1px solid #e5e7eb; border-left:3px solid var(--blue);
     border-radius:12px 0 0 12px; box-shadow:0 2px 10px rgba(0,0,0,.04); overflow:hidden;
     position:relative;
   }
+
+  /* ── 우측 상단: 자이로 패널 ───────────────── */
   #rightTop{
-    flex:1 1 auto;
-    min-height:120px;
-    background:#f8fafc;
-    color:var(--panelText);
-    display:flex;
-    align-items:stretch;
-    justify-content:stretch;
-    padding:0;
-    overflow:auto;
+    flex:1 1 auto; border-bottom:1px solid #e5e7eb; min-height: 120px;
+    background:#020617; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    padding:0; overflow:hidden;
   }
 
-  .drawPanel{
-    flex:1 1 auto;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    padding:14px;
-    overflow:auto;
-  }
-  .drawPanelHeader{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-  }
-  .drawPanelTitle{
-    font-size:18px;
-    font-weight:800;
-    color:#111827;
-  }
-  .drawPanelSubtitle{
-    font-size:12px;
-    line-height:1.45;
-    color:#475569;
-  }
-  .drawPanelBtns{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-  }
-  #openDrawBtn{ background:#7c3aed; color:#fff; }
-  #analyzePanelBtn{ background:#0ea5e9; color:#fff; }
-  #executePanelBtn{ background:#16a34a; color:#fff; }
-  #executePanelBtn.stop{ background:#ef4444; }
-
-  .profileBox{
-    border-radius:14px;
-    background:#eff6ff;
-    border:1px solid #bfdbfe;
-    color:#1e3a8a;
-    padding:12px 14px;
-    line-height:1.55;
-    font-size:13px;
-    white-space:pre-wrap;
-  }
-
-  .summaryCard{
-    border-radius:14px;
-    background:#0f172a;
-    border:1px solid rgba(148,163,184,.24);
-    color:#e2e8f0;
-    padding:12px 14px;
-    line-height:1.6;
-    font-size:13px;
-    white-space:pre-wrap;
-    min-height:92px;
-  }
-
-  .previewCard{
-    border-radius:14px;
-    background:#020617;
-    border:1px solid rgba(148,163,184,.24);
-    color:#93c5fd;
-    padding:12px 14px;
-    line-height:1.55;
-    font-size:12px;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    white-space:pre-wrap;
-    overflow:auto;
-    max-height:180px;
-  }
-
-  #drawSettings{
-    border:1px solid #dbe4f0;
-    border-radius:14px;
-    background:#ffffff;
-    color:#111827;
-  }
-  #drawSettings > summary{
-    cursor:pointer;
-    padding:10px 12px;
-    font-size:13px;
-    font-weight:700;
-    list-style:none;
-  }
-  #drawSettings > summary::-webkit-details-marker{ display:none; }
-  #drawSettingsBody{
-    border-top:1px solid #e5e7eb;
-    padding:12px;
-    display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap:10px;
-  }
-  .drawField{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    font-size:12px;
-    color:#475569;
-  }
-  .drawField input, .drawField select{
+  .gyroWrap{
+    position:relative;
     width:100%;
-    height:36px;
-    border-radius:10px;
-    border:1px solid #cbd5e1;
-    background:#fff;
-    color:#0f172a;
-    padding:0 10px;
-    font-size:14px;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:10px;
   }
-  .drawField small{
-    color:#94a3b8;
-    line-height:1.35;
+  .gyroWrap.full{
+    max-width:640px;
+    margin:0 auto;
+  }
+
+  /* 안내 문구 – 보드 위에 겹침, 비율에는 영향 없음 */
+  .gyroGuide{
+    position:absolute;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    max-width:90%;
+    padding:4px 10px;
+    border-radius:999px;
+    background:rgba(15,23,42,.8);
+    font-size:12px;
+    color:#cbd5f5;
+    text-align:center;
+    pointer-events:none;
+    z-index:8;
+  }
+
+  /* 정사각형 보드 */
+  .gyroCanvas{
+    position:relative;
+    width:min(80vmin, 100%);
+    aspect-ratio:1 / 1;
+    border-radius:18px;
+    background:#000;
+    border:2px solid rgba(148,163,184,.9);
+    overflow:hidden;
+    box-shadow:0 18px 40px rgba(0,0,0,.7);
+  }
+  .gyroWrap.full .gyroCanvas{
+    width:min(90vmin, 90vw, 90vh);
+  }
+
+  /* 파란 공 – 캔버스 크기에 비례 */
+  .gyroBall{
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:14%;
+    height:14%;
+    border-radius:50%;
+    background:#22a3ff;
+    box-shadow:0 0 0 4px rgba(37,99,235,.55), 0 14px 36px rgba(0,0,0,.9);
+    transform:translate(-50%,-50%);
+    transition: transform .06s linear;
+    z-index:3;
+  }
+
+  /* 투명 동그라미 – 캔버스 크기에 비례 */
+  .gyroTarget{
+    position:absolute;
+    width:30%;
+    height:30%;
+    border-radius:50%;
+    border:2px solid rgba(209,213,219,.85);
+    background:transparent;
+    box-shadow:0 0 0 1px rgba(31,41,55,.9) inset;
+    pointer-events:none;
+    z-index:1;
+  }
+  .gyroTarget.front{
+    top:20%; left:50%;
+    transform:translate(-50%,-50%);
+  }
+  .gyroTarget.back{
+    bottom:20%; left:50%;
+    transform:translate(-50%,50%);
+  }
+  .gyroTarget.left{
+    left:20%; top:50%;
+    transform:translate(-50%,-50%);
+  }
+  .gyroTarget.right{
+    right:20%; top:50%;
+    transform:translate(50%,-50%);
+  }
+
+  /* 1,2번 버튼 – 회색 + 약 20% 더 큼 (캔버스 비례) */
+  .gyroBtn{
+    position:absolute;
+    top:6%;
+    width:16.8%;
+    aspect-ratio:1 / 1;
+    border-radius:12px;
+    border:2px solid rgba(209,213,219,.9);
+    background:#4b5563;
+    color:#e5e7eb;
+    font-size:clamp(12px, 2.8vmin, 16px);
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 10px 20px rgba(0,0,0,.8);
+    z-index:4;
+  }
+  .gyroBtn1{ left:6%; }
+  .gyroBtn2{ right:6%; }
+  .gyroBtn:active{
+    transform:translateY(1px);
+    box-shadow:0 4px 12px rgba(0,0,0,.8);
+  }
+
+  /* “대기 중” 박스 – 자이로 리모컨 위에 겹침 */
+  .gyroWaitBox{
+    position:absolute;
+    top:6%;
+    left:50%;
+    transform:translateX(-50%);
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,.7);
+    background:rgba(15,23,42,.75);
+    font-size:11px;
+    color:#e5e7eb;
+    pointer-events:none;
+    z-index:7;
+    white-space:nowrap;
+  }
+
+  /* 이벤트 텍스트 – 보드 아래 */
+  .gyroStatus{
+    font-size:12px;
+    color:#e5e7eb;
+    text-align:center;
+    min-height:1.4em;
+  }
+  .gyroEventText{
+    font-weight:600;
+    color:#facc15;
   }
 
   /* 로그 리사이저 바 */
@@ -260,7 +266,7 @@
 
   /* 로그 패널 */
   #rightBottom{
-    flex:0 0 var(--logH);
+    flex: 0 0 var(--logH);
     display:flex; flex-direction:column; min-height:0; overflow:hidden;
     padding: calc(10px * var(--uiScale));
     background:#0b0f14; color:#d1e4ff; border-top:1px solid #1f2937;
@@ -298,13 +304,24 @@
     border-width: var(--triH) var(--triW) var(--triH) 0;
     border-color: transparent white transparent transparent;
   }
-
   .blocklyZoom,.blocklyTrash{ display:block !important; }
   .blocklyTrashLid, .blocklyTrashcanLid, .blocklyTrashCanLid { display:none !important; }
 
   body.fs-active #main{ height: calc(100vh - var(--headerH)); }
   body.panel-collapsed #right{ display:none; }
   body.panel-collapsed #left{ flex:1 1 100%; }
+
+  /* ── 전체화면 오버레이 ───────────────── */
+  #playOverlay{
+    position:fixed; inset:0; background:#000; color:#fff; display:none; z-index:10000;
+    touch-action:none; overscroll-behavior:contain; -webkit-tap-highlight-color:transparent;
+  }
+  #playOverlay.show{ display:flex; flex-direction:column; }
+  #playOverlay .body{
+    flex:1 1 auto;
+    display:flex; align-items:center; justify-content:center;
+    background:#020617;
+  }
 
   /* === 파일 드롭다운 === */
   .dropdown{ position:relative; }
@@ -323,224 +340,10 @@
   }
   .dropdown .menu > button:hover{ background:#f3f4f6; }
   #fileBtn{ background:#6b7280; color:#ffffff; }
-
-
-  /* ── 손그림 전체 화면 ───────────────────────── */
-  #drawOverlay{
-    position:fixed; inset:0; z-index:10030; display:none;
-    background:rgba(2,6,23,.985); color:#fff;
-    padding:max(env(safe-area-inset-top), 0px) max(env(safe-area-inset-right), 0px) max(env(safe-area-inset-bottom), 0px) max(env(safe-area-inset-left), 0px);
-    overflow:hidden;
-    touch-action:none;
-    overscroll-behavior:none;
-  }
-  #drawOverlay.show{ display:block; }
-
-  #drawOverlay .drawWorkspace{
-    width:100%;
-    height:100%;
-    display:grid;
-    grid-template-columns:1fr;
-    grid-template-rows:auto minmax(0,1fr) auto;
-    gap:10px;
-    padding:10px;
-  }
-  #drawOverlay .drawSide{
-    min-width:0;
-    min-height:0;
-    display:grid;
-    gap:10px;
-  }
-  #drawOverlay .drawSideLeft{
-    grid-template-columns:1fr;
-  }
-  #drawOverlay .drawSideRight{
-    grid-template-columns:1fr;
-  }
-  #drawOverlay .drawPaneCard{
-    border-radius:18px;
-    background:rgba(15,23,42,.92);
-    border:1px solid rgba(148,163,184,.24);
-    box-shadow:0 14px 30px rgba(0,0,0,.24);
-    padding:14px;
-    min-width:0;
-    min-height:0;
-  }
-  #drawOverlay .drawTitleCard{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-  #drawOverlay .drawTitle{
-    font-size:20px;
-    font-weight:800;
-    color:#f8fafc;
-  }
-  #drawOverlay .drawSubtitle{
-    font-size:12px;
-    color:#cbd5e1;
-    line-height:1.6;
-  }
-  #drawOverlay .drawHeaderBtns{
-    display:grid;
-    grid-template-columns:repeat(2, minmax(0,1fr));
-    gap:8px;
-  }
-  #drawOverlay .drawHelpTitle,
-  #drawOverlay .overlayPaneTitle{
-    font-size:12px;
-    font-weight:800;
-    color:#e2e8f0;
-    margin-bottom:6px;
-  }
-  #drawOverlay .drawHelpText{
-    font-size:12px;
-    color:#cbd5e1;
-    line-height:1.6;
-    white-space:pre-wrap;
-  }
-
-  #drawClearBtn{ background:#475569; color:#fff; }
-  #drawAnalyzeBtn{ background:#0ea5e9; color:#fff; }
-  #drawExecuteBtn{ background:#16a34a; color:#fff; }
-  #drawExecuteBtn.stop{ background:#ef4444; color:#fff; }
-  #drawCloseBtn{ background:#111827; color:#fff; }
-
-  #drawOverlay .drawCenter{
-    min-width:0;
-    min-height:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  #drawStageWrap{
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    min-width:0;
-    min-height:0;
-  }
-  #drawStage{
-    position:relative;
-    width:100%;
-    height:100%;
-    border-radius:20px;
-    overflow:hidden;
-    background:linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.98));
-    border:1px solid rgba(148,163,184,.28);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 16px 40px rgba(0,0,0,.35);
-    touch-action:none;
-  }
-  #drawCanvas{
-    display:block;
-    width:100%;
-    height:100%;
-    touch-action:none;
-    -webkit-user-select:none;
-    user-select:none;
-  }
-  #drawStageBadge{
-    position:absolute; top:12px; left:50%; transform:translateX(-50%);
-    padding:6px 12px; border-radius:999px;
-    background:rgba(15,23,42,.78); border:1px solid rgba(148,163,184,.38);
-    color:#e2e8f0; font-size:12px; font-weight:700; pointer-events:none;
-    white-space:nowrap;
-  }
-  #drawStageHelp{
-    position:absolute; left:14px; right:14px; bottom:14px;
-    padding:8px 10px; border-radius:12px;
-    background:rgba(2,6,23,.72); border:1px solid rgba(148,163,184,.28);
-    color:#cbd5e1; font-size:12px; line-height:1.5;
-    pointer-events:none;
-  }
-
-  #overlaySummary, #overlayPreview, #overlaySerialLog{
-    min-height:0;
-    overflow:auto;
-    white-space:pre-wrap;
-  }
-  #overlaySummary{
-    color:#e2e8f0;
-    font-size:12px;
-    line-height:1.6;
-  }
-  #overlayPreview{
-    color:#93c5fd;
-    font-size:11px;
-    line-height:1.5;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  .drawSerialCard{
-    display:flex;
-    flex-direction:column;
-    min-height:160px;
-  }
-  #overlaySerialLog{
-    flex:1 1 auto;
-    border-radius:12px;
-    background:#020617;
-    border:1px solid rgba(148,163,184,.18);
-    padding:10px;
-    color:#d1e4ff;
-    font-size:11px;
-    line-height:1.45;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-
-  @media (orientation: landscape) and (min-width: 900px){
-    #drawOverlay .drawWorkspace{
-      grid-template-columns:minmax(240px, 26vw) minmax(0,1fr) minmax(260px, 28vw);
-      grid-template-rows:minmax(0,1fr);
-      align-items:center;
-    }
-    #drawOverlay .drawSideLeft{
-      align-content:center;
-    }
-    #drawOverlay .drawSideRight{
-      grid-template-rows:minmax(0, .9fr) minmax(0, .9fr) minmax(180px, 1.2fr);
-      height:100%;
-    }
-    #drawOverlay .drawCenter{
-      height:100%;
-    }
-    #drawStageBadge{ font-size:11px; }
-  }
-
-  @media (max-width: 899px), (orientation: portrait){
-    #drawOverlay .drawWorkspace{
-      grid-template-columns:1fr;
-      grid-template-rows:auto minmax(0,1fr) auto;
-    }
-    #drawOverlay .drawHeaderBtns{
-      grid-template-columns:repeat(4, minmax(0,1fr));
-    }
-    #drawOverlay .drawSideRight{
-      grid-template-columns:1fr;
-      gap:8px;
-    }
-    #overlaySummary{ max-height:90px; }
-    #overlayPreview{ max-height:84px; }
-    #overlaySerialLog{ max-height:96px; }
-  }
-
-  @media (max-width: 640px){
-    #drawOverlay .drawWorkspace{ padding:8px; gap:8px; }
-    #drawOverlay .drawPaneCard{ padding:12px; border-radius:16px; }
-    #drawOverlay .drawTitle{ font-size:18px; }
-    #drawOverlay .drawSubtitle,
-    #drawOverlay .drawHelpText,
-    #overlaySummary{ font-size:11px; }
-    #overlayPreview, #overlaySerialLog{ font-size:10px; }
-    #drawStageHelp{ font-size:11px; }
-    #drawStageBadge{ font-size:10px; padding:5px 10px; }
-  }
-
 </style>
 
 <style id="xrobo-hsplit-style">
-  :root{ --rightW: 40%; }
+  :root{ --rightW: 40%; } /* initial right width */
   #hResizer{
     flex: 0 0 8px;
     background: linear-gradient(90deg,#e5e7eb,#d1d5db);
@@ -591,13 +394,121 @@
   #xrobo-kp4x4-v14 .ok{ background:#2563eb; color:#fff; }
   #xrobo-kp4x4-v14 .cancel{ background:#6b7280; color:#fff; }
 </style>
+
+<style id="xrobo-draw-path-style">
+  #drawModeBtn{ background:#7c3aed; color:#fff; }
+  #drawOverlay{
+    position:fixed; inset:0; z-index:10030; display:none;
+    background:rgba(2,6,23,.96); color:#fff;
+  }
+  #drawOverlay.show{ display:flex; flex-direction:column; }
+  #drawOverlay .drawShell{
+    flex:1 1 auto; min-height:0; display:flex; flex-direction:column;
+    gap:12px; padding:12px;
+  }
+  #drawOverlay .drawHeader{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; flex-wrap:wrap;
+  }
+  #drawOverlay .drawTitleWrap{ min-width:0; }
+  #drawOverlay .drawTitle{
+    font-size:20px; font-weight:800; color:#f8fafc; margin-bottom:4px;
+  }
+  #drawOverlay .drawSubtitle{
+    font-size:13px; color:#cbd5e1; line-height:1.5;
+  }
+  #drawOverlay .drawHeaderBtns{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  #drawOverlay .drawStage{
+    position:relative; flex:1 1 auto; min-height:280px;
+    border-radius:20px; overflow:hidden;
+    background:
+      linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.98));
+    border:1px solid rgba(148,163,184,.3);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 16px 40px rgba(0,0,0,.35);
+  }
+  #drawCanvas{
+    display:block; width:100%; height:100%;
+    touch-action:none;
+  }
+  #drawStageBadge{
+    position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    padding:6px 12px; border-radius:999px;
+    background:rgba(15,23,42,.78); border:1px solid rgba(148,163,184,.38);
+    color:#e2e8f0; font-size:12px; font-weight:700; pointer-events:none;
+  }
+  #drawStageHelp{
+    position:absolute; left:14px; bottom:14px;
+    padding:8px 10px; border-radius:12px;
+    background:rgba(2,6,23,.7); border:1px solid rgba(148,163,184,.28);
+    color:#cbd5e1; font-size:12px; line-height:1.45;
+    pointer-events:none; max-width:min(360px, 82%);
+  }
+  #drawControls{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  }
+  #drawAnalyzeBtn{ background:#0ea5e9; color:#fff; }
+  #drawExecuteBtn{ background:#16a34a; color:#fff; }
+  #drawExecuteBtn.stop{ background:#ef4444; }
+  #drawClearBtn{ background:#475569; color:#fff; }
+  #drawSummary{
+    margin-top:2px; padding:12px 14px; border-radius:14px;
+    background:#0f172a; border:1px solid rgba(148,163,184,.22);
+    color:#e2e8f0; font-size:13px; line-height:1.6; white-space:pre-wrap;
+    min-height:88px;
+  }
+  #drawCommandPreview{
+    margin-top:10px; padding:10px 12px; border-radius:12px;
+    background:#020617; border:1px solid rgba(148,163,184,.2);
+    color:#93c5fd; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:12px; line-height:1.5; white-space:pre-wrap;
+    max-height:160px; overflow:auto;
+  }
+  #drawSettings{
+    border:1px solid rgba(148,163,184,.24);
+    border-radius:14px; background:rgba(15,23,42,.82); color:#e2e8f0;
+  }
+  #drawSettings > summary{
+    cursor:pointer; padding:10px 12px; font-size:13px; font-weight:700;
+    list-style:none;
+  }
+  #drawSettings > summary::-webkit-details-marker{ display:none; }
+  #drawSettingsBody{
+    border-top:1px solid rgba(148,163,184,.18);
+    padding:12px; display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px;
+  }
+  .drawField{
+    display:flex; flex-direction:column; gap:6px;
+    font-size:12px; color:#cbd5e1;
+  }
+  .drawField input, .drawField select{
+    width:100%; height:36px; border-radius:10px; border:1px solid rgba(148,163,184,.28);
+    background:#020617; color:#f8fafc; padding:0 10px; font-size:14px;
+  }
+  .drawField small{
+    color:#94a3b8; line-height:1.4;
+  }
+  @media (max-width: 640px){
+    #drawOverlay .drawShell{ padding:10px; gap:10px; }
+    #drawOverlay .drawTitle{ font-size:18px; }
+    #drawOverlay .drawSubtitle{ font-size:12px; }
+    #drawOverlay .drawStage{ min-height:240px; }
+    #drawSummary{ min-height:100px; }
+    #drawStageHelp{ font-size:11px; max-width:84%; }
+  }
+</style>
+
 </head>
 <body>
+  <!-- 헤더 -->
   <header id="appHeader">
     <div id="topbar">
-      <div class="title">XROBO BLE — 손그림 주행 v10</div>
+      <div class="title">XROBO BLE — 자이로 센서 v8</div>
       <div class="spacer"></div>
 
+      <!-- 파일 드롭다운 -->
       <div class="dropdown" id="fileDropdown">
         <button id="fileBtn" class="btn" title="파일">파일 ▾</button>
         <div id="fileMenu" class="menu" role="menu" aria-hidden="true">
@@ -609,12 +520,18 @@
 
       <span class="state"><span id="statusDot" class="badgeDot off">off</span></span>
       <button id="connectToggle" class="btn">연결</button>
-      <button id="testBtn" class="btn" title="현재 손그림 분석">분석</button>
-      <button id="runToggle" class="btn" title="스마트폰 전체 화면으로 그리기">그리기</button>
+
+      <!-- 테스트/실행 -->
+      <button id="testBtn" class="btn" title="코딩 화면에서 테스트 실행">테스트</button>
+      <button id="runToggle" class="btn" title="전체화면 실행">실행</button>
+
+      <button id="drawModeBtn" class="btn" title="화면에 선을 그려 로봇을 실행">그리기</button>
+
       <button id="fsBtn" class="btn" title="전체화면">전체화면</button>
     </div>
   </header>
 
+  <!-- 본문 -->
   <div id="main">
     <div id="left">
       <div id="blocklyDiv"></div>
@@ -623,83 +540,32 @@
     <div id="hResizer" class="hsplit" title="좌우 크기 조절 바"></div>
 
     <div id="right">
+      <!-- 우측 상단: 자이로 패널 -->
       <div id="rightTop">
-        <div class="drawPanel">
-          <div class="drawPanelHeader">
-            <div class="drawPanelTitle">손그림 실행 설정</div>
-            <div class="drawPanelSubtitle">
-              자이로 기능은 제거했습니다. 화면에 선을 그리고 손을 떼면 자동으로 분석합니다.
-              회전 시간은 꺾이는 각도가 아니라, 방향을 바꾸기 전에 잠깐 멈춘 시간으로 계산하고,
-              회전 속도도 꺾이기 직전 손으로 그린 속도를 기준으로 함께 바뀝니다.
+        <div class="gyroWrap" id="gyroWrap">
+          <div class="gyroGuide" id="gyroInfoText">
+            테스트나 실행을 누르기 전에 수평을 맞춰 주세요.
+          </div>
+
+          <div class="gyroCanvas" id="gyroCanvas">
+            <button id="gyroBtn1" type="button" class="gyroBtn gyroBtn1">1</button>
+            <button id="gyroBtn2" type="button" class="gyroBtn gyroBtn2">2</button>
+
+            <div class="gyroTarget front" data-dir="front"></div>
+            <div class="gyroTarget back"  data-dir="back"></div>
+            <div class="gyroTarget left"  data-dir="left"></div>
+            <div class="gyroTarget right" data-dir="right"></div>
+
+            <div class="gyroBall" id="gyroBall"></div>
+
+            <div class="gyroWaitBox" id="gyroWaitBox">
+              <span id="gyroWaitText">대기 중</span>
             </div>
           </div>
 
-          <div class="drawPanelBtns">
-            <button id="openDrawBtn" class="btn">그리기 화면</button>
-            <button id="analyzePanelBtn" class="btn">분석</button>
-            <button id="executePanelBtn" class="btn">로봇 실행</button>
+          <div class="gyroStatus">
+            <div id="gyroEventText" class="gyroEventText">이벤트: -</div>
           </div>
-
-          <div id="motionProfileInfo" class="profileBox">모터 속도 설정 블록이 없어서 기본 최대 속도를 사용합니다.</div>
-
-          <details id="drawSettings">
-            <summary>세부 설정</summary>
-            <div id="drawSettingsBody">
-              <label class="drawField">
-                <span>직선 시간 배율</span>
-                <input id="drawTimeScale" type="number" min="0.2" max="4" step="0.1" value="1.0" />
-                <small>손으로 그린 이동 시간을 얼마나 그대로 쓸지 정합니다.</small>
-              </label>
-              <label class="drawField">
-                <span>멈춤→회전 배율</span>
-                <input id="drawPauseScale" type="number" min="0.2" max="4" step="0.1" value="1.0" />
-                <small>꺾이기 전 멈춘 시간을 회전 시간으로 바꿀 때 쓰는 배율입니다.</small>
-              </label>
-              <label class="drawField">
-                <span>최소 회전 시간(ms)</span>
-                <input id="drawMinTurnMs" type="number" min="50" max="4000" step="10" value="140" />
-                <small>멈춤이 너무 짧아도 이 시간만큼은 회전합니다.</small>
-              </label>
-              <label class="drawField">
-                <span>방향 스냅</span>
-                <select id="drawSnapMode">
-                  <option value="4" selected>4방향</option>
-                  <option value="8">8방향</option>
-                </select>
-                <small>처음에는 4방향이 가장 안정적입니다.</small>
-              </label>
-              <label class="drawField">
-                <span>회전 방향 반전</span>
-                <select id="drawTurnInvert">
-                  <option value="0" selected>기본</option>
-                  <option value="1">반전</option>
-                </select>
-                <small>로봇이 좌우 반대로 돌면 반전으로 바꿔 주세요.</small>
-              </label>
-              <label class="drawField">
-                <span>최소 선 길이(px)</span>
-                <input id="drawMinSegLen" type="number" min="6" max="240" value="18" />
-                <small>너무 짧은 움직임은 무시합니다.</small>
-              </label>
-              <label class="drawField">
-                <span>후진 판정 각도(°)</span>
-                <input id="drawBackAngle" type="number" min="120" max="180" value="150" />
-                <small>현재 방향과 거의 반대면 회전 대신 후진으로 보냅니다.</small>
-              </label>
-              <label class="drawField">
-                <span>정지 감지 반경(px)</span>
-                <input id="drawPauseRadius" type="number" min="4" max="60" value="12" />
-                <small>꼭짓점 근처에서 멈춘 시간을 찾는 범위입니다.</small>
-              </label>
-            </div>
-          </details>
-
-          <div id="drawSummary" class="summaryCard">화면에 손으로 선을 한 번 그려 주세요.
-예: ㄱ자 → 전진 → 우회전 → 전진
-직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용되고,
-회전 속도는 꺾이기 직전 손속도를 기준으로 같이 바뀝니다.</div>
-
-          <div id="drawCommandPreview" class="previewCard">명령 미리보기: -</div>
         </div>
       </div>
 
@@ -711,9 +577,10 @@
     </div>
   </div>
 
+  <!-- 툴박스 -->
   <xml id="toolbox" style="display:none">
-<category name="설정" colour="#8b5cf6">
-      <block type="motion_speed_profile"></block>
+    <category name="이벤트" colour="#f59e0b">
+      <block type="xrobo_start"></block>
     </category>
     <category name="출력" colour="#60a5fa">
       <block type="motor12_dd">
@@ -745,55 +612,116 @@
     </category>
   </xml>
 
-  
+  <!-- 전체화면 오버레이: 자이로 UI -->
+  <div id="playOverlay" aria-hidden="true">
+    <div class="body">
+      <div id="gyroOverlayWrap" class="gyroWrap full">
+        <div class="gyroGuide" id="gyroOverlayInfoText">
+          테스트나 실행을 누르기 전에 수평을 맞춰 주세요.
+        </div>
+        <div class="gyroCanvas" id="gyroOverlayCanvas">
+          <button id="gyroOverlayBtn1" type="button" class="gyroBtn gyroBtn1">1</button>
+          <button id="gyroOverlayBtn2" type="button" class="gyroBtn gyroBtn2">2</button>
+
+          <div class="gyroTarget front" data-dir="front"></div>
+          <div class="gyroTarget back"  data-dir="back"></div>
+          <div class="gyroTarget left"  data-dir="left"></div>
+          <div class="gyroTarget right" data-dir="right"></div>
+
+          <div class="gyroBall" id="gyroOverlayBall"></div>
+
+          <div class="gyroWaitBox" id="gyroOverlayWaitBox">
+            <span id="gyroOverlayWaitText">대기 중</span>
+          </div>
+        </div>
+        <div class="gyroStatus">
+          <div id="gyroOverlayEventText" class="gyroEventText">이벤트: -</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 손그림 주행 오버레이 -->
   <div id="drawOverlay" aria-hidden="true">
-    <div class="drawWorkspace">
-      <aside class="drawSide drawSideLeft">
-        <div class="drawPaneCard drawTitleCard">
-          <div class="drawTitle">손그림 실행</div>
+    <div class="drawShell">
+      <div class="drawHeader">
+        <div class="drawTitleWrap">
+          <div class="drawTitle">손그림 주행</div>
           <div class="drawSubtitle">
-            가로 화면에서는 가운데에 정사각형 그리기창이 오도록 배치했습니다.
-            왼쪽은 설명과 버튼, 오른쪽은 해석 결과와 시리얼 로그를 보여 줍니다.
-          </div>
-          <div class="drawHeaderBtns">
-            <button id="drawClearBtn" class="btn">지우기</button>
-            <button id="drawAnalyzeBtn" class="btn">분석</button>
-            <button id="drawExecuteBtn" class="btn">로봇 실행</button>
-            <button id="drawCloseBtn" class="btn">닫기</button>
+            스마트폰 화면에 손으로 선을 그리면, 위쪽을 시작 방향으로 해석해
+            전진·좌회전·우회전 명령으로 바꿔 로봇에 보냅니다.
           </div>
         </div>
-        <div class="drawPaneCard">
-          <div class="drawHelpTitle">그리는 방법</div>
-          <div class="drawHelpText">위쪽이 로봇의 시작 방향입니다.
-직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.
-회전 속도는 꺾이기 직전 선을 그릴 때의 손속도를 기준으로 정합니다.</div>
+        <div class="drawHeaderBtns">
+          <button id="drawClearBtn" class="btn">지우기</button>
+          <button id="drawAnalyzeBtn" class="btn">분석</button>
+          <button id="drawExecuteBtn" class="btn">로봇 실행</button>
+          <button id="drawCloseBtn" class="btn">닫기</button>
         </div>
-      </aside>
+      </div>
 
-      <section class="drawCenter" id="drawCenter">
-        <div id="drawStageWrap">
-          <div id="drawStage">
-            <canvas id="drawCanvas"></canvas>
-            <div id="drawStageBadge">↑ 위쪽이 로봇의 시작 방향</div>
-            <div id="drawStageHelp">직선을 그리고 꺾기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용됩니다.</div>
-          </div>
+      <div class="drawStage" id="drawStage">
+        <canvas id="drawCanvas"></canvas>
+        <div id="drawStageBadge">↑ 위쪽이 로봇의 시작 방향</div>
+        <div id="drawStageHelp">
+          한 번에 한 선으로 그려 주세요. 직선과 ㄱ자, ㄴ자처럼 꺾이는 경로에 가장 잘 맞습니다.
         </div>
-      </section>
+      </div>
 
-      <aside class="drawSide drawSideRight">
-        <div class="drawPaneCard">
-          <div class="overlayPaneTitle">해석 결과</div>
-          <div id="overlaySummary">화면에 선을 그리면 여기에 해석 결과가 표시됩니다.</div>
+      <div id="drawSummary">화면에 선을 그린 뒤 분석하거나 바로 실행할 수 있습니다.</div>
+      <div id="drawCommandPreview">명령 미리보기: -</div>
+
+      <details id="drawSettings">
+        <summary>세부 설정</summary>
+        <div id="drawSettingsBody">
+          <label class="drawField">
+            <span>최소 속도</span>
+            <input id="drawMinSpeed" type="number" min="1" max="20" value="8" />
+            <small>손이 느릴 때의 모터 속도</small>
+          </label>
+          <label class="drawField">
+            <span>최대 속도</span>
+            <input id="drawMaxSpeed" type="number" min="1" max="20" value="18" />
+            <small>손이 빠를 때의 모터 속도</small>
+          </label>
+          <label class="drawField">
+            <span>시간 배율</span>
+            <input id="drawTimeScale" type="number" min="0.2" max="4" step="0.1" value="1.2" />
+            <small>손이 그린 시간 × 배율</small>
+          </label>
+          <label class="drawField">
+            <span>회전 속도</span>
+            <input id="drawTurnSpeed" type="number" min="1" max="20" value="12" />
+            <small>좌/우 회전할 때의 속도</small>
+          </label>
+          <label class="drawField">
+            <span>90° 회전 시간(ms)</span>
+            <input id="drawTurn90Ms" type="number" min="80" max="2000" step="10" value="360" />
+            <small>직각 회전에 사용하는 기준 시간</small>
+          </label>
+          <label class="drawField">
+            <span>방향 스냅</span>
+            <select id="drawSnapMode">
+              <option value="4" selected>4방향(안정적)</option>
+              <option value="8">8방향(대각선 포함)</option>
+            </select>
+            <small>처음에는 4방향을 권장합니다.</small>
+          </label>
+          <label class="drawField">
+            <span>회전 방향</span>
+            <select id="drawTurnInvert">
+              <option value="0" selected>기본</option>
+              <option value="1">반전</option>
+            </select>
+            <small>좌/우가 반대로 돌면 반전으로 바꿔 주세요.</small>
+          </label>
+          <label class="drawField">
+            <span>최소 선분 길이(px)</span>
+            <input id="drawMinSegLen" type="number" min="6" max="200" value="18" />
+            <small>짧은 흔들림을 무시합니다.</small>
+          </label>
         </div>
-        <div class="drawPaneCard">
-          <div class="overlayPaneTitle">명령 미리보기</div>
-          <div id="overlayPreview">명령 미리보기: -</div>
-        </div>
-        <div class="drawPaneCard drawSerialCard">
-          <div class="overlayPaneTitle">시리얼 로그</div>
-          <div id="overlaySerialLog"></div>
-        </div>
-      </aside>
+      </details>
     </div>
   </div>
 
@@ -861,23 +789,20 @@ var LED_TGT=[].concat(PINS_OUT,[["CPU","CPU"]]);
 var LED_MODE=[["밝기","BRIGHT"],["숨쉬기","BREATHE"]];
 var LED_VALS=Array.from({length:20},(_,i)=>[String(i),String(i)]);
 
-var MOTION_EVENT_OPTIONS = [
-  ["전진속도","MOVE_FORWARD"],
-  ["후진속도","MOVE_BACKWARD"],
-  ["좌회전속도","TURN_LEFT"],
-  ["우회전속도","TURN_RIGHT"]
+/* 이벤트 옵션 */
+var GYRO_EVENT_OPTIONS = [
+  ["앞쪽으로 기울면","TILT_FRONT"],
+  ["뒤쪽으로 기울면","TILT_BACK"],
+  ["왼쪽으로 기울면","TILT_LEFT"],
+  ["오른쪽으로 기울면","TILT_RIGHT"],
+  ["1번 버튼을 누르면","BTN1"],
+  ["2번 버튼을 누르면","BTN2"]
 ];
-var MOTION_EVENT_LABELS = {};
-for(var i=0;i<MOTION_EVENT_OPTIONS.length;i++){
-  MOTION_EVENT_LABELS[MOTION_EVENT_OPTIONS[i][1]] = MOTION_EVENT_OPTIONS[i][0];
+var GYRO_EVENT_LABELS = {};
+for(var i=0;i<GYRO_EVENT_OPTIONS.length;i++){
+  GYRO_EVENT_LABELS[GYRO_EVENT_OPTIONS[i][1]] = GYRO_EVENT_OPTIONS[i][0];
 }
-
-var DEFAULT_SPEED_PROFILE = {
-  forward: 20,
-  backward: 20,
-  turnLeft: 20,
-  turnRight: 20
-};
+var GYRO_GUIDE_TEXT = '테스트나 실행을 누르기 전에 수평을 맞춰 주세요.';
 
 function clampVal(v, min, max){
   return v < min ? min : (v > max ? max : v);
@@ -887,27 +812,13 @@ function clampVal(v, min, max){
 Blockly.defineBlocksWithJsonArray([
   {
     "type":"xrobo_start",
-    "message0":"%1 이벤트",
+    "message0":"%1 때",
     "args0":[
-      { "type":"field_dropdown","name":"EVT","options":MOTION_EVENT_OPTIONS }
+      { "type":"field_dropdown","name":"EVT","options":GYRO_EVENT_OPTIONS }
     ],
     "nextStatement":null,
     "colour":36,
     "hat":"cap"
-  },
-  {
-    "type":"motion_speed_profile",
-    "message0":"모터 속도 설정 전진 %1 후진 %2 좌회전 %3 우회전 %4",
-    "args0":[
-      { "type":"field_number","name":"FWD","value":20,"min":1,"max":20,"precision":1 },
-      { "type":"field_number","name":"BWD","value":20,"min":1,"max":20,"precision":1 },
-      { "type":"field_number","name":"TL","value":20,"min":1,"max":20,"precision":1 },
-      { "type":"field_number","name":"TR","value":20,"min":1,"max":20,"precision":1 }
-    ],
-    "previousStatement":null,
-    "nextStatement":null,
-    "inputsInline":true,
-    "colour":270
   },
   {
     "type":"motor12_dd",
@@ -1016,8 +927,6 @@ function walkNode(b, list){
       if(s>0) list.push({type:'W',args:[s*1000]});
       break;
     }
-    case 'motion_speed_profile':
-      break;
   }
 }
 function walkChain(start, list){
@@ -1042,6 +951,8 @@ function normalizeProgram(list){
   }
   return out;
 }
+
+/* 워크스페이스에서 이벤트 프로그램 빌드 */
 function buildEventPrograms(){
   var map = {};
   var evs = ws.getBlocksByType('xrobo_start', true);
@@ -1054,31 +965,10 @@ function buildEventPrograms(){
     var prog=[];
     walkChain(chain, prog);
     var norm = normalizeProgram(prog);
-    if(!map[code]) map[code] = { label: (MOTION_EVENT_LABELS[code] || code), list: [] };
+    if(!map[code]) map[code] = { label: (GYRO_EVENT_LABELS[code] || code), list: [] };
     map[code].list = map[code].list.concat(norm);
   }
   return map;
-}
-function readMotionSpeedProfile(){
-  var blocks = ws.getBlocksByType('motion_speed_profile', true) || [];
-  if(!blocks.length){
-    return {
-      forward: DEFAULT_SPEED_PROFILE.forward,
-      backward: DEFAULT_SPEED_PROFILE.backward,
-      turnLeft: DEFAULT_SPEED_PROFILE.turnLeft,
-      turnRight: DEFAULT_SPEED_PROFILE.turnRight,
-      source: '기본값'
-    };
-  }
-  var b = blocks[blocks.length - 1];
-  var profile = {
-    forward: clampVal(Math.round(Number(b.getFieldValue('FWD') || DEFAULT_SPEED_PROFILE.forward)), 1, 20),
-    backward: clampVal(Math.round(Number(b.getFieldValue('BWD') || DEFAULT_SPEED_PROFILE.backward)), 1, 20),
-    turnLeft: clampVal(Math.round(Number(b.getFieldValue('TL') || DEFAULT_SPEED_PROFILE.turnLeft)), 1, 20),
-    turnRight: clampVal(Math.round(Number(b.getFieldValue('TR') || DEFAULT_SPEED_PROFILE.turnRight)), 1, 20),
-    source: '모터 속도 설정 블록'
-  };
-  return profile;
 }
 
 /* ================= 헤더/스케일 ================= */
@@ -1103,20 +993,13 @@ applyHeaderHeight();
 /* ================= BLE & 로그 ================= */
 var SERVICE_UUID=0xFFF0;
 var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null;
-var isConnected=false;
+var isConnected=false, isRunning=false, isFullscreenRun=false;
+var orientationLockedType = null;
 var $=id=>document.getElementById(id);
-function syncOverlaySerialLog(){
-  var mainLog = $('log');
-  var overlayLog = $('overlaySerialLog');
-  if(!mainLog || !overlayLog) return;
-  overlayLog.textContent = mainLog.textContent;
-  overlayLog.scrollTop = overlayLog.scrollHeight;
-}
 var log=function(m){
   var L=$('log');
   L.textContent+=m+"\n";
   L.scrollTop=L.scrollHeight;
-  syncOverlaySerialLog();
 };
 var dot=$('statusDot');
 var btnConnect=$('connectToggle'), btnRun=$('runToggle'), btnTest=$('testBtn');
@@ -1130,15 +1013,18 @@ function setConnected(v){
   dot.classList.toggle('on',v);
   dot.classList.toggle('off',!v);
   dot.textContent=v?'on':'off';
+  if(!v) setRunning(false);
 }
-function sendRaw(s){
-  if(!writeChar){
-    log('⚠️ BLE 미연결: '+s);
-    return Promise.reject(new Error('BLE 미연결'));
-  }
-  return writeChar.writeValue(enc(s+'\n'))
-    .then(()=>{ log('➡️ '+s); })
-    .catch(e=>{ log('⚠️ 전송 실패: '+e); throw e; });
+function setRunning(v){
+  isRunning=v;
+  btnRun.textContent = v ? '■ 정지' : '실행';
+  btnRun.style.background = v ? '#ef4444' : '#16a34a';
+  btnTest.disabled = v;
+
+  var infoEl = document.getElementById('gyroInfoText');
+  var infoEl2 = document.getElementById('gyroOverlayInfoText');
+  if(infoEl)  infoEl.style.display  = v ? 'none' : 'block';
+  if(infoEl2) infoEl2.style.display = v ? 'none' : 'block';
 }
 
 /* BLE connect/disconnect */
@@ -1214,7 +1100,7 @@ function serializeProject(){
 }
 function saveProject(){
   var data = serializeProject();
-  var suggestedName = 'xrobo_draw_robot_project.json';
+  var suggestedName = 'xrobo_project.json';
   if(window.showSaveFilePicker){
     (async function(){
       try{
@@ -1268,17 +1154,13 @@ function loadProject(){
       var xml = parser.parseFromString(obj.xml, 'text/xml');
       Blockly.Xml.domToWorkspace(xml.documentElement, ws);
       log('📂 불러오기 완료');
-      refreshMotionProfileInfo();
-      if(window.drawApi && typeof window.drawApi.reanalyzeIfPossible === 'function'){
-        window.drawApi.reanalyzeIfPossible();
-      }
     }catch(e){
       if(!(e && e.name==='AbortError')) alert('불러오기 실패: '+e);
     }
   })();
 }
 
-/* ================= 오른쪽 패널: 로그 리사이저 ================= */
+/* ================= 오른쪽 패널: 로그 리사이저 (상하 끝까지 이동) ================= */
 (function(){
   var divider = document.getElementById('rightDivider');
   var root = document.documentElement;
@@ -1352,990 +1234,636 @@ fsBtn.onclick=async function(){
 document.addEventListener('fullscreenchange', syncFSLabel);
 syncFSLabel();
 
-/* ================= 실행 공용 ================= */
-async function sleep(ms){
-  return new Promise(function(resolve){ setTimeout(resolve, ms); });
+/* ================= 실행/큐 & 이벤트 매핑 ================= */
+var eventPrograms = {};
+var queue = [];
+var queueBusy = false;
+var cancelToken = 0;
+
+function sendRaw(s){
+  if(!writeChar){
+    log('➡️(BLE 미연결) '+s);
+    return Promise.resolve();
+  }
+  return writeChar.writeValue(enc(s+'\n'))
+    .then(()=>{ log('➡️ '+s); })
+    .catch(e=>{ log('⚠️ 전송 실패: '+e); });
 }
-async function safeStopRobot(){
-  if(!writeChar) return;
-  try{
-    await writeChar.writeValue(enc('S\n'));
-    log('➡️ S');
-  }catch(e){}
-}
-async function runList(list, tokenGetter){
+async function runList(list, localToken){
   for(var i=0;i<list.length;i++){
     var ins=list[i];
-    if(tokenGetter && tokenGetter()) return;
+    if(localToken !== cancelToken) return;
     if(ins.type==='CMD'){
       await sendRaw(ins.s);
     }else if(ins.type==='W'){
       var ms = (ins.args && ins.args[0]) ? ins.args[0] : 0;
-      if(ms>0) await sleep(ms);
+      if(ms>0) await new Promise(r=>setTimeout(r, ms));
     }else if(ins.type==='FOR'){
       for(var k=0;k<ins.count;k++){
-        if(tokenGetter && tokenGetter()) return;
-        await runList(ins.body, tokenGetter);
+        if(localToken !== cancelToken) return;
+        await runList(ins.body, localToken);
       }
     }
   }
 }
-function refreshMotionProfileInfo(){
-  var profile = readMotionSpeedProfile();
-  var lines = [];
-  lines.push('현재 모터 속도 설정');
-  lines.push('전진 최대 ' + profile.forward + ' / 후진 최대 ' + profile.backward + ' / 좌회전 최대 ' + profile.turnLeft + ' / 우회전 최대 ' + profile.turnRight);
-  lines.push('사용 기준: ' + profile.source);
-  lines.push('손가락이 빠를수록 전진 속도와 회전 속도가 함께 커집니다.');
-  lines.push('회전 속도는 꺾이기 직전 선분의 손속도를 기준으로 정합니다.');
-  var box = $('motionProfileInfo');
-  if(box) box.textContent = lines.join('\n');
+async function processQueue(localToken){
+  if(queueBusy) return;
+  queueBusy = true;
+  try{
+    while(queue.length && localToken === cancelToken){
+      var item = queue.shift();
+      await runList(item.list, localToken);
+    }
+  }finally{
+    queueBusy = false;
+  }
 }
 
-/* ================= 손그림 분석/실행 ================= */
-(function(){
-  var drawOverlay = $('drawOverlay');
-  var drawCenter = $('drawCenter');
-  var drawStageWrap = $('drawStageWrap');
-  var drawStage = $('drawStage');
-  var drawCanvas = $('drawCanvas');
-  var drawSummary = $('drawSummary');
-  var drawPreview = $('drawCommandPreview');
-  var overlaySummary = $('overlaySummary');
-  var overlayPreview = $('overlayPreview');
-  var openDrawBtn = $('openDrawBtn');
-  var analyzePanelBtn = $('analyzePanelBtn');
-  var executePanelBtn = $('executePanelBtn');
-  var drawClearBtn = $('drawClearBtn');
-  var drawAnalyzeBtn = $('drawAnalyzeBtn');
-  var drawExecuteBtn = $('drawExecuteBtn');
-  var drawCloseBtn = $('drawCloseBtn');
-  var ctx = drawCanvas.getContext('2d');
+function showGyroEventLabel(text){
+  var label = '이벤트: ' + (text || '-');
+  var p = document.getElementById('gyroEventText');
+  if(p) p.textContent = label;
+  var o = document.getElementById('gyroOverlayEventText');
+  if(o) o.textContent = label;
+}
 
-  var SAMPLE_MS = 35;
-  var MOVE_CAPTURE_PX = 2.0;
-  var STILL_CAPTURE_PX = 0.65;
-  var STATIONARY_PX = 1.2;
+function triggerEvent(key){
+  if(!isRunning) return;
+  var entry = eventPrograms[key];
+  if(!entry || !entry.list || !entry.list.length) return;
+  queue.push({list: entry.list});
+  log('▶ 이벤트 실행: "'+ (entry.label || key) + '"');
+  showGyroEventLabel(entry.label || key);
+  var myToken = cancelToken;
+  processQueue(myToken);
+}
 
-  var drawState = {
-    open: false,
-    drawing: false,
-    pointerId: null,
-    latestPointer: null,
-    sampleTimer: null,
-    samples: [],
-    analysis: null,
-    cssWidth: 0,
-    cssHeight: 0,
-    executing: false,
-    execToken: 0,
-    requestingFullscreen: false
-  };
-  window.isDrawExecuting = false;
+/* ================= 자이로 UI & 센서 ================= */
+var gyroSupported = (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window);
+var gyroPermissionState = 'unknown';
+var gyroListenerAdded = false;
+var gyroActive = false;
+var gyroMode = 'panel';
+var gyroBaselineFront = 0;
+var gyroBaselineSide  = 0;
+var gyroBaselineSet   = false;
+var gyroNeedsCalibrate = false;
+var gyroInsideFlags = {front:false,back:false,left:false,right:false};
+var gyroState = { panel:null, overlay:null };
 
-  function setSummary(text){
-    var t = String(text || '');
-    if(drawSummary) drawSummary.textContent = t;
-    if(overlaySummary) overlaySummary.textContent = t;
-  }
-  function setPreview(text){
-    var t = String(text || '');
-    if(drawPreview) drawPreview.textContent = t;
-    if(overlayPreview) overlayPreview.textContent = t;
-  }
-  function initialSummary(){
-    setSummary(
-      '화면에 손으로 선을 한 번 그려 주세요.\n' +
-      '예: ㄱ자 → 전진 → 우회전 → 전진\n' +
-      '직선을 그리고 방향을 바꾸기 전에 잠깐 멈추면 그 시간이 회전 시간으로 사용되고,\n' +
-      '회전 속도는 꺾기 직전 손속도를 기준으로 정합니다.'
-    );
-    setPreview('명령 미리보기: -');
-  }
+var GYRO_FRONT_RANGE = 20;
+var GYRO_SIDE_RANGE  = 20;
 
-  function nowMs(){
-    return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  }
-  function dist(a, b){
-    var dx = b.x - a.x;
-    var dy = b.y - a.y;
-    return Math.sqrt(dx*dx + dy*dy);
-  }
-  function clonePoint(p){
-    return { x:p.x, y:p.y, t:p.t };
-  }
-  function readNum(id, def, min, max){
-    var el = $(id);
-    if(!el) return def;
-    var n = Number(el.value);
-    if(!isFinite(n)) n = def;
-    if(isFinite(min)) n = Math.max(min, n);
-    if(isFinite(max)) n = Math.min(max, n);
-    el.value = String(n);
-    return n;
-  }
-  function getDrawConfig(){
-    return {
-      moveTimeScale: readNum('drawTimeScale', 1.0, 0.2, 4),
-      pauseScale: readNum('drawPauseScale', 1.0, 0.2, 4),
-      minTurnMs: readNum('drawMinTurnMs', 140, 50, 4000),
-      snapCount: Number(($('drawSnapMode') && $('drawSnapMode').value) || '4') === 8 ? 8 : 4,
-      turnInvert: (($('drawTurnInvert') && $('drawTurnInvert').value) || '0') === '1',
-      minSegLen: readNum('drawMinSegLen', 18, 6, 240),
-      backAngle: readNum('drawBackAngle', 150, 120, 180),
-      pauseRadius: readNum('drawPauseRadius', 12, 4, 60),
-      stationaryPx: STATIONARY_PX
-    };
-  }
-  function canvasPointFromEvent(e){
-    var rect = drawCanvas.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      t: nowMs()
-    };
-  }
-  function layoutDrawStageSquare(){
-    if(!drawCenter || !drawStageWrap) return;
-    var rect = drawCenter.getBoundingClientRect();
-    if(!rect.width || !rect.height) return;
-    var size = Math.floor(Math.min(rect.width, rect.height));
-    if(size < 120) size = Math.floor(Math.min(rect.width, rect.height));
-    drawStageWrap.style.width = size + 'px';
-    drawStageWrap.style.height = size + 'px';
-  }
-  function resizeDrawCanvas(){
-    if(!drawStage) return;
-    layoutDrawStageSquare();
-    var rect = drawStage.getBoundingClientRect();
-    if(!rect.width || !rect.height) return;
-    var dpr = Math.max(1, window.devicePixelRatio || 1);
-    drawCanvas.width = Math.round(rect.width * dpr);
-    drawCanvas.height = Math.round(rect.height * dpr);
-    drawCanvas.style.width = rect.width + 'px';
-    drawCanvas.style.height = rect.height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawState.cssWidth = rect.width;
-    drawState.cssHeight = rect.height;
-  }
-  function appendSample(p, mode){
-    var pts = drawState.samples;
-    var last = pts[pts.length - 1];
-    if(!last){
-      pts.push(clonePoint(p));
-      return true;
+/* 현재 화면 회전 각도 */
+function getScreenAngle(){
+  var ang = 0;
+  try{
+    if(window.screen && screen.orientation && typeof screen.orientation.angle === 'number'){
+      ang = screen.orientation.angle;
+    }else if(typeof window.orientation === 'number'){
+      ang = window.orientation;
     }
-    var d = dist(last, p);
-    var dt = Math.max(0, p.t - last.t);
-    if(mode === 'timer'){
-      if(d >= STILL_CAPTURE_PX || dt >= SAMPLE_MS){
-        pts.push(clonePoint(p));
+  }catch(e){}
+  ang = ((ang % 360) + 360) % 360;
+  if(ang===0 || ang===90 || ang===180 || ang===270) return ang;
+  return 0;
+}
+
+/* beta/gamma → 화면 기준 front/side */
+function mapTiltAxes(beta, gamma){
+  var angle = getScreenAngle();
+  var front, side;
+  switch(angle){
+    case 90:   // 가로(오른쪽이 위)
+      front =  gamma;
+      side  = -beta;
+      break;
+    case 180:  // 세로 뒤집힘
+      front = -beta;
+      side  = -gamma;
+      break;
+    case 270:  // 가로(왼쪽이 위)
+      front = -gamma;
+      side  =  beta;
+      break;
+    default:   // 세로
+      front = beta;
+      side  = gamma;
+      break;
+  }
+  return { front:front, side:side };
+}
+
+/* 자이로 뷰 생성 */
+function createGyroView(rootId, ballId, btn1Id, btn2Id, infoId, eventId){
+  var root = document.getElementById(rootId);
+  if(!root) return null;
+  var canvas = root.querySelector('.gyroCanvas');
+  var ball = document.getElementById(ballId);
+  var btn1 = document.getElementById(btn1Id);
+  var btn2 = document.getElementById(btn2Id);
+  var infoEl = document.getElementById(infoId);
+  var eventEl = document.getElementById(eventId);
+  var targets = {};
+  if(canvas && canvas.querySelectorAll){
+    var els = canvas.querySelectorAll('.gyroTarget');
+    for(var i=0;i<els.length;i++){
+      var dir = els[i].getAttribute('data-dir');
+      if(dir) targets[dir] = els[i];
+    }
+  }
+  if(btn1){
+    btn1.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      triggerGyroButton(1);
+    });
+  }
+  if(btn2){
+    btn2.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      triggerGyroButton(2);
+    });
+  }
+  return { root:root, canvas:canvas, ball:ball, btn1:btn1, btn2:btn2, infoEl:infoEl, eventEl:eventEl, targets:targets, geometry:null };
+}
+
+function setupGyroViews(){
+  try{
+    gyroState.panel = createGyroView('gyroWrap','gyroBall','gyroBtn1','gyroBtn2','gyroInfoText','gyroEventText');
+    gyroState.overlay = createGyroView('gyroOverlayWrap','gyroOverlayBall','gyroOverlayBtn1','gyroOverlayBtn2','gyroOverlayInfoText','gyroOverlayEventText');
+    refreshGyroGeometry();
+  }catch(e){
+    console.warn('Gyro view init error', e);
+  }
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', setupGyroViews);
+}else{
+  setupGyroViews();
+}
+window.addEventListener('resize', function(){ refreshGyroGeometry(); });
+
+function getActiveGyroView(){
+  if(gyroMode === 'overlay' && gyroState.overlay) return gyroState.overlay;
+  return gyroState.panel || gyroState.overlay || null;
+}
+
+/* 크기 조정은 CSS 비율에 맡기므로 JS에서 별도 조절 없음 */
+function updateGyroViewScale(view, cRect){
+  return;
+}
+
+/* 기하 정보 계산 */
+function refreshGyroGeometry(){
+  ['panel','overlay'].forEach(function(mode){
+    var view = gyroState[mode];
+    if(!view || !view.canvas || !view.ball) return;
+    var cRect = view.canvas.getBoundingClientRect();
+    if(!cRect.width || !cRect.height) return;
+
+    updateGyroViewScale(view, cRect);
+
+    var centerX = cRect.width/2;
+    var centerY = cRect.height/2;
+
+    var ballRect = view.ball.getBoundingClientRect();
+    var ballRadius = ballRect.width/2;
+
+    var targetsInfo = {};
+    var maxX = 0, maxY = 0;
+
+    ['front','back','left','right'].forEach(function(name){
+      var el = view.targets[name];
+      if(!el) return;
+      var r = el.getBoundingClientRect();
+      var tx = (r.left - cRect.left) + r.width/2;
+      var ty = (r.top  - cRect.top ) + r.height/2;
+      var relX = tx - centerX;
+      var relY = ty - centerY;
+      var radius = r.width/2;
+      targetsInfo[name] = { relX:relX, relY:relY, radius:radius };
+      if(name==='left' || name==='right') maxX = Math.max(maxX, Math.abs(relX));
+      if(name==='front'|| name==='back')  maxY = Math.max(maxY, Math.abs(relY));
+    });
+
+    if(!maxX) maxX = cRect.width*0.25;
+    if(!maxY) maxY = cRect.height*0.25;
+
+    view.geometry = {
+      centerX:centerX,
+      centerY:centerY,
+      ballRadius:ballRadius,
+      maxX:maxX,
+      maxY:maxY,
+      targets:targetsInfo
+    };
+  });
+}
+
+/* 안내 문구 변경 */
+function setGyroInfo(where, text){
+  if(typeof text !== 'string') return;
+  if(where==='panel' || where==='all'){
+    var el = document.getElementById('gyroInfoText');
+    if(el) el.textContent = text;
+  }
+  if(where==='overlay' || where==='all'){
+    var el2 = document.getElementById('gyroOverlayInfoText');
+    if(el2) el2.textContent = text;
+  }
+}
+
+/* 버튼 클릭 → BTN 이벤트 */
+function triggerGyroButton(idx){
+  if(!isRunning) return;
+  var code = (idx===1 ? 'BTN1' : 'BTN2');
+  var label = GYRO_EVENT_LABELS[code] || (idx+'번 버튼');
+  triggerEvent(code);
+  showGyroEventLabel(label);
+}
+
+/* 자이로 권한 */
+async function requestGyroPermission(){
+  if(!gyroSupported) return false;
+  if(gyroPermissionState === 'granted') return true;
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined' &&
+       typeof DeviceOrientationEvent.requestPermission === 'function'){
+      var res = await DeviceOrientationEvent.requestPermission();
+      if(res === 'granted'){
+        gyroPermissionState = 'granted';
         return true;
+      }else{
+        gyroPermissionState = 'denied';
+        return false;
       }
-      return false;
-    }
-    if(d >= MOVE_CAPTURE_PX || dt >= SAMPLE_MS){
-      pts.push(clonePoint(p));
+    }else{
+      gyroPermissionState = 'granted';
       return true;
     }
+  }catch(e){
+    console.warn('Gyro permission error', e);
+    gyroPermissionState = 'denied';
     return false;
   }
-  function startSampling(){
-    stopSampling();
-    drawState.sampleTimer = setInterval(function(){
-      if(!drawState.drawing || !drawState.latestPointer) return;
-      appendSample({
-        x: drawState.latestPointer.x,
-        y: drawState.latestPointer.y,
-        t: nowMs()
-      }, 'timer');
-      renderDrawCanvas();
-    }, SAMPLE_MS);
+}
+
+/* 자이로 시작/정지 */
+async function startGyro(mode){
+  if(!gyroSupported){
+    alert('이 기기에서는 자이로/기울기 센서를 사용할 수 없습니다.\n스마트폰에서 열어 주세요.');
+    return false;
   }
-  function stopSampling(){
-    if(drawState.sampleTimer){
-      clearInterval(drawState.sampleTimer);
-      drawState.sampleTimer = null;
-    }
+  var ok = await requestGyroPermission();
+  if(!ok){
+    alert('자이로 센서를 사용할 수 있는 권한이 없어 기울기 이벤트를 사용할 수 없습니다.');
+    return false;
   }
-
-  function openDrawOverlay(requestFullscreen){
-    if(drawState.executing){
-      return;
-    }
-    drawOverlay.classList.add('show');
-    drawOverlay.setAttribute('aria-hidden', 'false');
-    drawState.open = true;
-    syncOverlaySerialLog();
-    resizeDrawCanvas();
-    renderDrawCanvas();
-    if(requestFullscreen){
-      try{
-        if(drawOverlay.requestFullscreen && !document.fullscreenElement){
-          var fsPromise = drawOverlay.requestFullscreen();
-          if(fsPromise && typeof fsPromise.catch === 'function'){
-            fsPromise.catch(function(){});
-          }
-        }
-      }catch(e){}
-      setTimeout(function(){
-        resizeDrawCanvas();
-        renderDrawCanvas();
-      }, 80);
-    }
+  gyroMode = mode || 'panel';
+  gyroActive = true;
+  gyroNeedsCalibrate = true;
+  gyroBaselineSet = false;
+  gyroInsideFlags = {front:false,back:false,left:false,right:false};
+  if(!gyroListenerAdded){
+    window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    gyroListenerAdded = true;
   }
-  async function closeDrawOverlay(){
-    if(drawState.drawing) finishDrawing();
-    if(drawState.executing){
-      stopDrawExecution();
-      await sleep(40);
-    }
-    drawOverlay.classList.remove('show');
-    drawOverlay.setAttribute('aria-hidden', 'true');
-    drawState.open = false;
-    if(document.fullscreenElement === drawOverlay){
-      try{ await document.exitFullscreen(); }catch(e){}
-    }
+  setTimeout(refreshGyroGeometry, 80);
+  setGyroInfo('all','스마트폰을 수평으로 들고 있으면 기준점을 자동으로 맞춥니다.');
+  return true;
+}
+function stopGyro(){
+  gyroActive = false;
+  gyroNeedsCalibrate = false;
+}
+
+/* 방향 변경 시 기준 재설정 */
+(function(){
+  function orientationChanged(){
+    if(!gyroActive) return;
+    gyroNeedsCalibrate = true;
+    gyroBaselineSet = false;
+    setGyroInfo('all','화면 방향이 바뀌었습니다. 다시 수평으로 들고 기준을 맞춰 주세요.');
+    setTimeout(refreshGyroGeometry, 120);
   }
-  function clearDrawPath(resetText){
-    if(drawState.executing) return;
-    stopSampling();
-    drawState.samples = [];
-    drawState.analysis = null;
-    drawState.latestPointer = null;
-    drawState.drawing = false;
-    drawState.pointerId = null;
-    if(resetText !== false) initialSummary();
-    renderDrawCanvas();
+  window.addEventListener('orientationchange', orientationChanged);
+  if(window.screen && screen.orientation && typeof screen.orientation.addEventListener === 'function'){
+    screen.orientation.addEventListener('change', orientationChanged);
   }
-
-  function filterMovementPoints(samples, minDist){
-    if(!samples || samples.length < 2) return (samples || []).slice();
-    var out = [clonePoint(samples[0])];
-    for(var i=1;i<samples.length;i++){
-      var p = samples[i];
-      var prev = out[out.length - 1];
-      if(dist(prev, p) >= minDist || i === samples.length - 1){
-        out.push(clonePoint(p));
-      }
-    }
-    if(out.length < 2){
-      out = [clonePoint(samples[0]), clonePoint(samples[samples.length - 1])];
-    }
-    return out;
-  }
-  function smoothPoints(points, radius){
-    if(!points || points.length <= 2) return (points || []).slice();
-    var out = [];
-    for(var i=0;i<points.length;i++){
-      var sx = 0, sy = 0, count = 0;
-      for(var j=Math.max(0, i-radius); j<=Math.min(points.length-1, i+radius); j++){
-        sx += points[j].x;
-        sy += points[j].y;
-        count++;
-      }
-      out.push({
-        x: sx / count,
-        y: sy / count,
-        t: points[i].t
-      });
-    }
-    if(out.length){
-      out[0] = clonePoint(points[0]);
-      out[out.length-1] = clonePoint(points[points.length-1]);
-    }
-    return out;
-  }
-  function perpendicularDistance(p, p1, p2){
-    var x = p.x, y = p.y;
-    var x1 = p1.x, y1 = p1.y;
-    var x2 = p2.x, y2 = p2.y;
-    var dx = x2 - x1;
-    var dy = y2 - y1;
-    if(dx === 0 && dy === 0) return Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-    var t = ((x - x1) * dx + (y - y1) * dy) / (dx*dx + dy*dy);
-    var px = x1 + t * dx;
-    var py = y1 + t * dy;
-    var ddx = x - px;
-    var ddy = y - py;
-    return Math.sqrt(ddx*ddx + ddy*ddy);
-  }
-  function rdp(points, epsilon){
-    if(!points || points.length < 3) return (points || []).slice();
-    var first = points[0];
-    var last = points[points.length - 1];
-    var index = -1;
-    var dmax = 0;
-    for(var i=1;i<points.length-1;i++){
-      var d = perpendicularDistance(points[i], first, last);
-      if(d > dmax){
-        index = i;
-        dmax = d;
-      }
-    }
-    if(dmax > epsilon && index > 0){
-      var left = rdp(points.slice(0, index + 1), epsilon);
-      var right = rdp(points.slice(index), epsilon);
-      return left.slice(0, -1).concat(right);
-    }
-    return [first, last];
-  }
-  function headingFromVector(dx, dy){
-    var deg = Math.atan2(dx, -dy) * 180 / Math.PI;
-    if(deg < 0) deg += 360;
-    return deg;
-  }
-  function snapHeading(deg, snapCount){
-    var step = 360 / snapCount;
-    var snapped = Math.round(deg / step) * step;
-    snapped = ((snapped % 360) + 360) % 360;
-    return snapped;
-  }
-  function signedTurnDelta(fromDeg, toDeg){
-    var diff = ((toDeg - fromDeg + 540) % 360) - 180;
-    if(diff === -180) diff = 180;
-    return diff;
-  }
-  function formatHeading(deg){
-    var d = ((deg % 360) + 360) % 360;
-    if(d === 0) return '위';
-    if(d === 45) return '오른쪽 위';
-    if(d === 90) return '오른쪽';
-    if(d === 135) return '오른쪽 아래';
-    if(d === 180) return '아래';
-    if(d === 225) return '왼쪽 아래';
-    if(d === 270) return '왼쪽';
-    if(d === 315) return '왼쪽 위';
-    return String(d) + '°';
-  }
-  function matchVerticesToRaw(vertices, raw){
-    var matches = [];
-    if(!vertices.length || !raw.length) return matches;
-    var cursor = 0;
-    for(var i=0;i<vertices.length;i++){
-      var v = vertices[i];
-      var bestIdx = cursor;
-      var bestDist = Infinity;
-      var maxIdx = raw.length - 1 - Math.max(0, (vertices.length - 1 - i));
-      for(var j=cursor; j<=maxIdx; j++){
-        var d = dist(v, raw[j]);
-        if(d < bestDist){
-          bestDist = d;
-          bestIdx = j;
-        }
-      }
-      matches.push(bestIdx);
-      cursor = bestIdx;
-    }
-    return matches;
-  }
-  function computeIntervalStats(raw, startIdx, endIdx, cfg){
-    var movingDistance = 0;
-    var movingTime = 0;
-    var totalTime = 0;
-    for(var i=startIdx+1;i<=endIdx;i++){
-      var dt = Math.max(0, raw[i].t - raw[i-1].t);
-      var d = dist(raw[i-1], raw[i]);
-      totalTime += dt;
-      if(d >= cfg.stationaryPx){
-        movingDistance += d;
-        movingTime += dt;
-      }
-    }
-    if(movingTime <= 0){
-      movingDistance = dist(raw[startIdx], raw[endIdx]);
-      movingTime = Math.max(60, totalTime);
-    }
-    return {
-      movingDistance: movingDistance,
-      movingTimeMs: Math.max(40, Math.round(movingTime)),
-      totalTimeMs: Math.max(40, Math.round(totalTime)),
-      avgFingerSpeed: movingDistance / Math.max(1, movingTime)
-    };
-  }
-  function computeCornerPause(raw, vertex, centerIdx, cfg){
-    if(!raw.length) return 0;
-    var radius = cfg.pauseRadius;
-    var start = centerIdx;
-    var end = centerIdx;
-    while(start > 0 && dist(raw[start-1], vertex) <= radius) start--;
-    while(end < raw.length - 1 && dist(raw[end+1], vertex) <= radius) end++;
-    var pause = 0;
-    for(var i=start+1;i<=end;i++){
-      var dt = Math.max(0, raw[i].t - raw[i-1].t);
-      var d = dist(raw[i-1], raw[i]);
-      if(d <= cfg.stationaryPx){
-        pause += dt;
-      }
-    }
-    return Math.round(pause);
-  }
-  function buildSegments(vertices, matches, raw, cfg){
-    var segs = [];
-    if(!vertices || vertices.length < 2) return segs;
-    for(var i=1;i<vertices.length;i++){
-      var a = vertices[i-1];
-      var b = vertices[i];
-      var len = dist(a, b);
-      if(len < cfg.minSegLen) continue;
-      var rawStart = Math.min(matches[i-1], matches[i]);
-      var rawEnd = Math.max(matches[i-1], matches[i]);
-      if(rawEnd <= rawStart) continue;
-      var stats = computeIntervalStats(raw, rawStart, rawEnd, cfg);
-      var rawHeading = headingFromVector(b.x - a.x, b.y - a.y);
-      var heading = snapHeading(rawHeading, cfg.snapCount);
-      var seg = {
-        start: a,
-        end: b,
-        length: len,
-        rawStartIndex: rawStart,
-        rawEndIndex: rawEnd,
-        movingDistance: stats.movingDistance,
-        movingTimeMs: stats.movingTimeMs,
-        totalTimeMs: stats.totalTimeMs,
-        avgFingerSpeed: stats.avgFingerSpeed,
-        rawHeading: rawHeading,
-        heading: heading,
-        pauseBeforeMs: 0
-      };
-      var prev = segs[segs.length - 1];
-      if(prev && Math.abs(signedTurnDelta(prev.heading, seg.heading)) < 1){
-        prev.end = b;
-        prev.length += len;
-        prev.rawEndIndex = rawEnd;
-        prev.movingDistance += seg.movingDistance;
-        prev.movingTimeMs += seg.movingTimeMs;
-        prev.totalTimeMs += seg.totalTimeMs;
-        prev.avgFingerSpeed = prev.movingDistance / Math.max(1, prev.movingTimeMs);
-      }else{
-        segs.push(seg);
-      }
-    }
-    for(var j=1;j<segs.length;j++){
-      var prevSeg = segs[j-1];
-      segs[j].pauseBeforeMs = computeCornerPause(raw, prevSeg.end, prevSeg.rawEndIndex, cfg);
-    }
-    return segs.slice(0, 16);
-  }
-
-  function makePreviewPoints(segments){
-    if(!segments || !segments.length) return [];
-    var pts = [{ x: segments[0].start.x, y: segments[0].start.y }];
-    var cur = { x: segments[0].start.x, y: segments[0].start.y };
-    for(var i=0;i<segments.length;i++){
-      var seg = segments[i];
-      var rad = seg.heading * Math.PI / 180;
-      cur = {
-        x: cur.x + Math.sin(rad) * seg.length,
-        y: cur.y - Math.cos(rad) * seg.length
-      };
-      pts.push(cur);
-    }
-    return pts;
-  }
-  function speedRatioFromSegment(segSpeed, minV, maxV){
-    if(!isFinite(segSpeed) || segSpeed <= 0) return 0.45;
-    if(!isFinite(minV) || !isFinite(maxV) || Math.abs(maxV - minV) < 0.02) return 0.65;
-    return clampVal((segSpeed - minV) / (maxV - minV), 0, 1);
-  }
-  function speedFromRatio(ratio, maxSpeed){
-    maxSpeed = clampVal(Math.round(maxSpeed || 20), 1, 20);
-    var minSpeed = Math.max(1, Math.round(maxSpeed * 0.25));
-    return clampVal(Math.round(minSpeed + ratio * (maxSpeed - minSpeed)), 1, maxSpeed);
-  }
-  function moveSpeedForSegment(seg, minV, maxV, maxSpeed){
-    return speedFromRatio(speedRatioFromSegment(seg.avgFingerSpeed, minV, maxV), maxSpeed);
-  }
-  function makeTurnCommand(delta, duration, turnSpeed, cfg){
-    if(!delta) return null;
-    var right = delta > 0;
-    var speed = clampVal(Math.round(turnSpeed || 5), 1, 20);
-    duration = clampVal(Math.round(duration || cfg.minTurnMs), 50, 5000);
-    var m1, m2;
-    if(right){
-      m1 = cfg.turnInvert ? -speed : speed;
-      m2 = cfg.turnInvert ? speed : -speed;
-    }else{
-      m1 = cfg.turnInvert ? speed : -speed;
-      m2 = cfg.turnInvert ? -speed : speed;
-    }
-    return {
-      kind: right ? 'turn_right' : 'turn_left',
-      dir: right ? '우회전' : '좌회전',
-      speed: speed,
-      duration: duration,
-      s: 'M12 ' + m1 + ' ' + m2 + ' ' + duration,
-      label: (right ? '우회전' : '좌회전') + '(' + speed + ', ' + duration + 'ms)'
-    };
-  }
-  function compileAnalysis(segments, cfg, profile){
-    var analysis = {
-      segments: segments || [],
-      simplified: [],
-      previewPoints: [],
-      commands: [],
-      previewParts: [],
-      speedProfile: profile
-    };
-    if(!segments || !segments.length) return analysis;
-
-    var speeds = [];
-    for(var i=0;i<segments.length;i++){
-      if(isFinite(segments[i].avgFingerSpeed)) speeds.push(segments[i].avgFingerSpeed);
-    }
-    var minV = speeds.length ? Math.min.apply(null, speeds) : NaN;
-    var maxV = speeds.length ? Math.max.apply(null, speeds) : NaN;
-
-    var heading = 0; // 시작 방향: 위쪽
-    for(var k=0;k<segments.length;k++){
-      var seg = segments[k];
-      var delta = signedTurnDelta(heading, seg.heading);
-      var absDelta = Math.abs(delta);
-      var moveRatio = speedRatioFromSegment(seg.avgFingerSpeed, minV, maxV);
-
-      if(absDelta >= cfg.backAngle){
-        var backSpeed = speedFromRatio(moveRatio, profile.backward);
-        var backDuration = clampVal(Math.round(seg.movingTimeMs * cfg.moveTimeScale), 100, 5000);
-        var backCmd = {
-          kind: 'move_backward',
-          speed: backSpeed,
-          duration: backDuration,
-          heading: heading,
-          s: 'M12 ' + (-backSpeed) + ' ' + (-backSpeed) + ' ' + backDuration,
-          label: '후진(' + backSpeed + ', ' + backDuration + 'ms)'
-        };
-        analysis.commands.push(backCmd);
-        analysis.previewParts.push(backCmd.label);
-        continue;
-      }
-
-      if(absDelta >= 1){
-        var prevSeg = analysis.segments[Math.max(0, k - 1)] || seg;
-        var turnRatio = speedRatioFromSegment(prevSeg.avgFingerSpeed, minV, maxV);
-        var turnMax = delta > 0 ? profile.turnRight : profile.turnLeft;
-        var turnSpeed = speedFromRatio(turnRatio, turnMax);
-        var turnDuration = Math.max(cfg.minTurnMs, Math.round((seg.pauseBeforeMs || 0) * cfg.pauseScale));
-        var turnCmd = makeTurnCommand(delta, turnDuration, turnSpeed, cfg);
-        if(turnCmd){
-          analysis.commands.push(turnCmd);
-          analysis.previewParts.push(turnCmd.label);
-        }
-        heading = seg.heading;
-      }
-
-      var moveSpeed = speedFromRatio(moveRatio, profile.forward);
-      var moveDuration = clampVal(Math.round(seg.movingTimeMs * cfg.moveTimeScale), 100, 5000);
-      var moveCmd = {
-        kind: 'move_forward',
-        speed: moveSpeed,
-        duration: moveDuration,
-        heading: seg.heading,
-        s: 'M12 ' + moveSpeed + ' ' + moveSpeed + ' ' + moveDuration,
-        label: '전진(' + moveSpeed + ', ' + moveDuration + 'ms)'
-      };
-      analysis.commands.push(moveCmd);
-      analysis.previewParts.push(moveCmd.label);
-      heading = seg.heading;
-    }
-
-    analysis.previewPoints = makePreviewPoints(segments);
-    return analysis;
-  }
-  function analyzeCurrentDrawing(){
-    if(drawState.samples.length < 2){
-      setSummary('선이 너무 짧습니다. 조금 더 길게 그려 주세요.');
-      setPreview('명령 미리보기: -');
-      drawState.analysis = null;
-      renderDrawCanvas();
-      return null;
-    }
-
-    var cfg = getDrawConfig();
-    var profile = readMotionSpeedProfile();
-    var raw = drawState.samples.slice();
-    var movement = filterMovementPoints(raw, 2.2);
-    var smooth = smoothPoints(movement, 2);
-    var epsilon = Math.max(8, Math.min(24, Math.min(drawState.cssWidth || 320, drawState.cssHeight || 320) * 0.022));
-    var simplified = rdp(smooth, epsilon);
-    if(simplified.length < 2){
-      simplified = [clonePoint(smooth[0]), clonePoint(smooth[smooth.length - 1])];
-    }
-
-    var matches = matchVerticesToRaw(simplified, raw);
-    var segments = buildSegments(simplified, matches, raw, cfg);
-    if(!segments.length && simplified.length >= 2){
-      segments = buildSegments([clonePoint(simplified[0]), clonePoint(simplified[simplified.length - 1])], [matches[0], matches[matches.length - 1]], raw, cfg);
-    }
-
-    var analysis = compileAnalysis(segments, cfg, profile);
-    analysis.simplified = simplified;
-    drawState.analysis = analysis;
-    renderDrawCanvas();
-
-    if(!analysis.commands.length){
-      setSummary('경로가 너무 짧거나 흔들림이 많아 명령으로 바꾸지 못했습니다.\n조금 더 길고 분명하게 그려 주세요.');
-      setPreview('명령 미리보기: -');
-      return analysis;
-    }
-
-    var lines = [];
-    lines.push('감지한 선분: ' + analysis.segments.length + '개');
-    lines.push('방향: ' + analysis.segments.map(function(seg){ return formatHeading(seg.heading); }).join(' → '));
-    var pauses = [];
-    for(var i=0;i<analysis.segments.length;i++){
-      if(analysis.segments[i].pauseBeforeMs > 0){
-        pauses.push('선분 ' + (i+1) + ' 앞 멈춤 ' + Math.round(analysis.segments[i].pauseBeforeMs) + 'ms');
-      }
-    }
-    if(pauses.length){
-      lines.push('회전 기준 멈춤: ' + pauses.join(', '));
-    }else{
-      lines.push('회전 기준 멈춤: 감지된 멈춤 없음 → 최소 회전 시간 사용');
-    }
-    lines.push('최대 속도 설정: 전진 ' + profile.forward + ' / 후진 ' + profile.backward + ' / 좌회전 ' + profile.turnLeft + ' / 우회전 ' + profile.turnRight);
-    lines.push('해석: ' + analysis.previewParts.join(' → '));
-    lines.push('회전 속도는 꺾이기 직전 선분의 손속도를 기준으로 정했습니다.');
-    if(!isConnected){
-      lines.push('현재 BLE가 연결되어 있지 않아 로봇 실행은 시작되지 않습니다.');
-    }
-    setSummary(lines.join('\n'));
-
-    var cmdLines = ['명령 미리보기:'];
-    for(var j=0;j<analysis.commands.length;j++){
-      var cmd = analysis.commands[j];
-      cmdLines.push((j+1) + '. ' + cmd.s + '    // ' + cmd.label);
-    }
-    setPreview(cmdLines.join('\n'));
-    return analysis;
-  }
-
-  function drawGrid(w, h){
-    ctx.save();
-    ctx.fillStyle = '#020617';
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.strokeStyle = 'rgba(148,163,184,.12)';
-    ctx.lineWidth = 1;
-    var step = Math.max(24, Math.round(Math.min(w, h) / 10));
-    for(var x=step; x<w; x+=step){
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for(var y=step; y<h; y+=step){
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-
-    ctx.strokeStyle = 'rgba(59,130,246,.22)';
-    ctx.setLineDash([8, 8]);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(w / 2, 18);
-    ctx.lineTo(w / 2, h - 18);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = 'rgba(96,165,250,.28)';
-    ctx.beginPath();
-    ctx.moveTo(w / 2, 14);
-    ctx.lineTo(w / 2 - 10, 34);
-    ctx.lineTo(w / 2 + 10, 34);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-  function drawPolyline(points, color, width){
-    if(!points || points.length < 2) return;
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for(var i=1;i<points.length;i++){
-      ctx.lineTo(points[i].x, points[i].y);
-    }
-    ctx.stroke();
-    ctx.restore();
-  }
-  function drawEndpoints(points, startColor, endColor, radius){
-    if(!points || !points.length) return;
-    var first = points[0];
-    var last = points[points.length - 1];
-    ctx.save();
-    ctx.fillStyle = startColor;
-    ctx.beginPath();
-    ctx.arc(first.x, first.y, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = endColor;
-    ctx.beginPath();
-    ctx.arc(last.x, last.y, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-  function drawPreviewLabels(points){
-    if(!points || points.length < 2) return;
-    ctx.save();
-    ctx.font = 'bold 12px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for(var i=1;i<points.length;i++){
-      var a = points[i-1];
-      var b = points[i];
-      var mx = (a.x + b.x) / 2;
-      var my = (a.y + b.y) / 2;
-      ctx.fillStyle = '#38bdf8';
-      ctx.beginPath();
-      ctx.arc(mx, my, 11, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#082f49';
-      ctx.fillText(String(i), mx, my + .5);
-    }
-    ctx.restore();
-  }
-  function drawEmptyHint(w, h){
-    ctx.save();
-    ctx.fillStyle = 'rgba(226,232,240,.85)';
-    ctx.font = '700 18px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('손으로 경로를 그려 주세요', w / 2, h / 2 - 6);
-    ctx.fillStyle = 'rgba(148,163,184,.88)';
-    ctx.font = '13px system-ui, sans-serif';
-    ctx.fillText('위쪽을 시작 방향으로 해석합니다.', w / 2, h / 2 + 20);
-    ctx.restore();
-  }
-  function renderDrawCanvas(){
-    var w = drawState.cssWidth;
-    var h = drawState.cssHeight;
-    if(!w || !h) return;
-    drawGrid(w, h);
-    if(!drawState.samples.length){
-      drawEmptyHint(w, h);
-      return;
-    }
-    var pathPts = filterMovementPoints(drawState.samples, 1.4);
-    drawPolyline(pathPts, 'rgba(251,191,36,.92)', 3);
-    drawEndpoints(pathPts, '#22c55e', '#ef4444', 5);
-
-    if(drawState.analysis && drawState.analysis.previewPoints && drawState.analysis.previewPoints.length > 1){
-      drawPolyline(drawState.analysis.previewPoints, 'rgba(34,197,94,.95)', 4);
-      drawPreviewLabels(drawState.analysis.previewPoints);
-    }else if(drawState.analysis && drawState.analysis.simplified && drawState.analysis.simplified.length > 1){
-      drawPolyline(drawState.analysis.simplified, 'rgba(56,189,248,.82)', 4);
-    }
-  }
-
-  function updateExecuteButtons(){
-    var label = drawState.executing ? '정지' : '로봇 실행';
-    if(drawExecuteBtn){
-      drawExecuteBtn.textContent = label;
-      drawExecuteBtn.classList.toggle('stop', !!drawState.executing);
-    }
-    if(executePanelBtn){
-      executePanelBtn.textContent = label;
-      executePanelBtn.classList.toggle('stop', !!drawState.executing);
-    }
-    btnRun.disabled = !!drawState.executing;
-    btnTest.disabled = !!drawState.executing;
-    if(openDrawBtn) openDrawBtn.disabled = !!drawState.executing;
-    if(analyzePanelBtn) analyzePanelBtn.disabled = !!drawState.executing;
-  }
-
-  function stopDrawExecution(){
-    if(!drawState.executing) return;
-    drawState.execToken++;
-    drawState.executing = false;
-    window.isDrawExecuting = false;
-    updateExecuteButtons();
-    safeStopRobot();
-    try{ log('⏹ 손그림 실행 정지'); }catch(_){}
-  }
-
-  async function executeDrawCommands(){
-    if(drawState.executing){
-      stopDrawExecution();
-      return;
-    }
-    if(!isConnected){
-      alert('먼저 BLE를 연결해 주세요.');
-      return;
-    }
-    var analysis = drawState.analysis || analyzeCurrentDrawing();
-    if(!analysis || !analysis.commands || !analysis.commands.length){
-      alert('먼저 선을 그린 뒤 분석해 주세요.');
-      return;
-    }
-
-    drawState.executing = true;
-    window.isDrawExecuting = true;
-    updateExecuteButtons();
-
-    var token = ++drawState.execToken;
-    function cancelled(){ return token !== drawState.execToken; }
-
-    try{
-      log('🖍 손그림 실행 시작');
-      for(var i=0;i<analysis.commands.length;i++){
-        if(cancelled()) break;
-        var cmd = analysis.commands[i];
-        await sendRaw(cmd.s);
-        if(cmd.duration > 0){
-          await sleep(cmd.duration);
-        }
-      }
-      if(!cancelled()){
-        log('✅ 손그림 실행 완료');
-      }
-    }catch(err){
-      try{ log('⚠️ 손그림 실행 오류: ' + err); }catch(_){}
-    }finally{
-      await safeStopRobot();
-      drawState.executing = false;
-      window.isDrawExecuting = false;
-      updateExecuteButtons();
-    }
-  }
-
-  function onDrawPointerDown(e){
-    if(drawState.executing) return;
-    if(e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault();
-    if(drawState.samples.length){
-      drawState.samples = [];
-      drawState.analysis = null;
-    }
-    drawState.drawing = true;
-    drawState.pointerId = e.pointerId;
-    drawState.latestPointer = canvasPointFromEvent(e);
-    if(drawCanvas.setPointerCapture){
-      try{ drawCanvas.setPointerCapture(e.pointerId); }catch(_){}
-    }
-    drawState.samples.push(clonePoint(drawState.latestPointer));
-    startSampling();
-    renderDrawCanvas();
-    setSummary('그리는 중입니다. 손을 떼면 자동으로 분석합니다.');
-    setPreview('명령 미리보기: 분석 중...');
-  }
-  function onDrawPointerMove(e){
-    if(!drawState.drawing || e.pointerId !== drawState.pointerId) return;
-    e.preventDefault();
-    drawState.latestPointer = canvasPointFromEvent(e);
-    appendSample(drawState.latestPointer, 'move');
-    renderDrawCanvas();
-  }
-  function finishDrawing(e){
-    if(!drawState.drawing) return;
-    if(typeof e !== 'undefined' && e && e.pointerId != null && e.pointerId !== drawState.pointerId) return;
-    if(e){
-      try{
-        drawState.latestPointer = canvasPointFromEvent(e);
-        appendSample(drawState.latestPointer, 'move');
-      }catch(_){}
-    }
-    stopSampling();
-    drawState.drawing = false;
-    drawState.pointerId = null;
-    drawState.latestPointer = null;
-    if(drawState.samples.length < 2){
-      setSummary('선이 너무 짧습니다. 조금 더 길게 그려 주세요.');
-      setPreview('명령 미리보기: -');
-      renderDrawCanvas();
-      return;
-    }
-    analyzeCurrentDrawing();
-  }
-
-  function reanalyzeIfPossible(){
-    refreshMotionProfileInfo();
-    if(drawState.samples.length >= 2 && !drawState.drawing){
-      analyzeCurrentDrawing();
-    }
-  }
-
-  openDrawBtn.addEventListener('click', function(){ openDrawOverlay(true); });
-  analyzePanelBtn.addEventListener('click', function(){
-    if(!drawState.open) openDrawOverlay(false);
-    setTimeout(function(){ analyzeCurrentDrawing(); }, 30);
-  });
-  executePanelBtn.addEventListener('click', function(){
-    if(!drawState.open) openDrawOverlay(true);
-    setTimeout(function(){ executeDrawCommands(); }, 30);
-  });
-
-  drawClearBtn.addEventListener('click', function(){ clearDrawPath(true); });
-  drawAnalyzeBtn.addEventListener('click', function(){ analyzeCurrentDrawing(); });
-  drawExecuteBtn.addEventListener('click', function(){ executeDrawCommands(); });
-  drawCloseBtn.addEventListener('click', function(){ closeDrawOverlay(); });
-
-  drawCanvas.addEventListener('pointerdown', onDrawPointerDown);
-  drawCanvas.addEventListener('pointermove', onDrawPointerMove);
-  drawCanvas.addEventListener('pointerup', finishDrawing);
-  drawCanvas.addEventListener('pointercancel', finishDrawing);
-  drawCanvas.addEventListener('pointerleave', function(e){
-    if(drawState.drawing && e.pointerType === 'mouse'){
-      finishDrawing(e);
-    }
-  });
-
-  btnRun.addEventListener('click', function(){ openDrawOverlay(true); });
-  btnTest.addEventListener('click', function(){
-    if(!drawState.open) openDrawOverlay(false);
-    setTimeout(function(){ analyzeCurrentDrawing(); }, 30);
-  });
-
-  window.addEventListener('resize', function(){
-    if(drawState.open){
-      resizeDrawCanvas();
-      renderDrawCanvas();
-    }
-  });
-  document.addEventListener('fullscreenchange', function(){
-    if(drawState.open){
-      setTimeout(function(){
-        resizeDrawCanvas();
-        renderDrawCanvas();
-      }, 80);
-    }
-  });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && drawState.open && !drawState.executing){
-      closeDrawOverlay();
-    }
-  });
-
-  ['drawTimeScale','drawPauseScale','drawMinTurnMs','drawSnapMode','drawTurnInvert','drawMinSegLen','drawBackAngle','drawPauseRadius'].forEach(function(id){
-    var el = $(id);
-    if(!el) return;
-    var handler = function(){ reanalyzeIfPossible(); };
-    el.addEventListener('change', handler);
-    el.addEventListener('input', handler);
-  });
-
-  ws.addChangeListener(function(){
-    refreshMotionProfileInfo();
-    reanalyzeIfPossible();
-  });
-
-  refreshMotionProfileInfo();
-  initialSummary();
-  updateExecuteButtons();
-  syncOverlaySerialLog();
-
-  window.drawApi = {
-    open: openDrawOverlay,
-    close: closeDrawOverlay,
-    analyze: analyzeCurrentDrawing,
-    execute: executeDrawCommands,
-    stop: stopDrawExecution,
-    reanalyzeIfPossible: reanalyzeIfPossible
-  };
 })();
+
+/* 센서 값 처리 – 좌우만 반대로 변경 */
+function onDeviceOrientation(ev){
+  if(!gyroActive) return;
+  var beta = ev.beta, gamma = ev.gamma;
+  if(typeof beta !== 'number' || typeof gamma !== 'number') return;
+
+  var mapped = mapTiltAxes(beta, gamma);
+  if(gyroNeedsCalibrate){
+    gyroBaselineFront = mapped.front;
+    gyroBaselineSide  = mapped.side;
+    gyroBaselineSet   = true;
+    gyroNeedsCalibrate = false;
+    setGyroInfo('all','기준이 설정되었습니다. 이제 스마트폰을 기울여 보세요.');
+  }
+  if(!gyroBaselineSet) return;
+
+  var dFront = mapped.front - gyroBaselineFront;
+  var dSide  = mapped.side  - gyroBaselineSide;
+
+  var ny = clampVal(-dFront / GYRO_FRONT_RANGE, -1, 1);   // 앞/뒤 (그대로)
+  var nx = clampVal(-dSide  / GYRO_SIDE_RANGE , -1, 1);   // 좌/우 반전
+
+  updateGyroBall(nx, ny);
+}
+
+/* 공 위치 업데이트 + 타겟 충돌 검사 */
+function updateGyroBall(nx, ny){
+  var view = getActiveGyroView();
+  if(!view || !view.ball) return;
+  if(!view.geometry) refreshGyroGeometry();
+  if(!view.geometry) return;
+
+  var g = view.geometry;
+  var offX = g.maxX * clampVal(nx, -1, 1);
+  var offY = g.maxY * clampVal(ny, -1, 1);
+
+  view.ball.style.transform = 'translate(calc(-50% + '+offX+'px), calc(-50% + '+offY+'px))';
+
+  var ballX = g.centerX + offX;
+  var ballY = g.centerY + offY;
+
+  ['front','back','left','right'].forEach(function(name){
+    var info = g.targets[name];
+    if(!info) return;
+    var targetX = g.centerX + info.relX;
+    var targetY = g.centerY + info.relY;
+    var dx = ballX - targetX;
+    var dy = ballY - targetY;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    var inside = dist <= Math.max(0, info.radius - g.ballRadius*0.4);
+    var prev   = gyroInsideFlags[name];
+    if(inside && !prev){
+      gyroInsideFlags[name] = true;
+      handleGyroTargetHit(name);
+    }else if(!inside && prev){
+      gyroInsideFlags[name] = false;
+    }
+  });
+}
+
+function handleGyroTargetHit(dir){
+  if(!isRunning) return;
+  var code = null;
+  if(dir==='front') code='TILT_FRONT';
+  else if(dir==='back') code='TILT_BACK';
+  else if(dir==='left') code='TILT_LEFT';
+  else if(dir==='right') code='TILT_RIGHT';
+  if(!code) return;
+  triggerEvent(code);
+}
+
+/* 화면 방향 고정/해제 (전체화면 실행 시) */
+async function lockCurrentOrientation(){
+  if(!('screen' in window) || !screen.orientation || !screen.orientation.lock) return;
+  var type = null;
+  try{
+    if(screen.orientation.type){
+      if(screen.orientation.type.indexOf('portrait') === 0) type = 'portrait';
+      else if(screen.orientation.type.indexOf('landscape') === 0) type = 'landscape';
+    }
+  }catch(e){}
+  if(!type){
+    var angle = getScreenAngle();
+    type = (angle===0 || angle===180) ? 'portrait' : 'landscape';
+  }
+  try{
+    await screen.orientation.lock(type);
+    orientationLockedType = type;
+  }catch(e){
+    orientationLockedType = null;
+    console.warn('orientation lock failed', e);
+  }
+}
+function unlockOrientation(){
+  try{
+    if(orientationLockedType && screen.orientation && screen.orientation.unlock){
+      screen.orientation.unlock();
+    }
+  }catch(e){}
+  orientationLockedType = null;
+}
+
+/* 테스트 실행 */
+async function startTest(){
+  if(isRunning) return;
+  eventPrograms = buildEventPrograms();
+  cancelToken++; queue = [];
+  isFullscreenRun = false;
+  setRunning(true);
+  var ok = await startGyro('panel');
+  if(!ok){
+    log('⚠️ 자이로 센서를 사용할 수 없어 기울기 이벤트는 동작하지 않습니다.');
+  }else{
+    log('▶ 테스트 실행 (자이로/버튼 이벤트 대기)');
+  }
+}
+
+/* 전체화면 실행 */
+var overlay = document.getElementById('playOverlay');
+async function startFullRun(){
+  if(isRunning) return;
+  eventPrograms = buildEventPrograms();
+  cancelToken++; queue = [];
+  isFullscreenRun = true;
+  setRunning(true);
+
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden','false');
+  try{
+    if(overlay.requestFullscreen) await overlay.requestFullscreen();
+  }catch(e){}
+
+  await lockCurrentOrientation();
+
+  var ok = await startGyro('overlay');
+  if(!ok){
+    log('⚠️ 자이로 센서를 사용할 수 없어 기울기 이벤트는 동작하지 않습니다.');
+  }else{
+    log('▶ 전체화면 실행 시작 (자이로 이벤트 대기)');
+  }
+}
+
+/* 정지 */
+async function stopRun(){
+  cancelToken++; queue=[];
+  setRunning(false);
+  stopGyro();
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden','true');
+  isFullscreenRun = false;
+  try{
+    if(document.fullscreenElement) await document.exitFullscreen();
+  }catch(e){}
+  unlockOrientation();
+  try{
+    if(writeChar) writeChar.writeValue(enc('S\n'));
+  }catch(e){}
+  setGyroInfo('all', GYRO_GUIDE_TEXT);
+  showGyroEventLabel('-');
+}
+
+btnTest.onclick = ()=> { if(!isRunning) startTest(); };
+btnRun.onclick  = ()=> { if(!isRunning) startFullRun(); else stopRun(); };
+
+document.addEventListener('fullscreenchange', ()=>{
+  if (isFullscreenRun && !document.fullscreenElement){
+    stopRun();
+  }
+});
+document.addEventListener('keydown', (e)=>{
+  if (isFullscreenRun && e.key === 'Escape') stopRun();
+});
+
+/* 전체화면에서 두 번 탭하면 종료 */
+(function(){
+  var overlayEl = document.getElementById('playOverlay');
+  if(!overlayEl) return;
+  var lastTapTime = 0;
+  overlayEl.addEventListener('pointerdown', function(e){
+    var now = e.timeStamp || Date.now();
+    if(now - lastTapTime <= 300){
+      stopRun();
+      lastTapTime = 0;
+    }else{
+      lastTapTime = now;
+    }
+  }, {passive:true});
+  overlayEl.addEventListener('dblclick', function(){
+    stopRun();
+  }, {passive:true});
+})();
+
+/* ================= 음성 인식 (기존 구조 유지용, 실제 자이로와는 독립) ================= */
+var voiceBtn = document.getElementById('voiceBtn');
+var voiceStatus = document.getElementById('voiceStatus');
+var voiceText = document.getElementById('voiceText');
+
+var overlayVoiceBtn = document.getElementById('overlayVoiceBtn');
+var overlayVoiceStatus = document.getElementById('overlayVoiceStatus');
+var overlayVoiceText = document.getElementById('overlayVoiceText');
+
+var recognition = null;
+var recognizing = false;
+var listenTimer = null;
+var lastTranscript = '';
+
+function updateVoiceUI(state, msg){
+  if(voiceStatus){
+    if(state === 'idle')      voiceStatus.textContent = '대기 중';
+    else if(state === 'listening') voiceStatus.textContent = '듣는 중... (최대 3초)';
+    else if(state === 'thinking')  voiceStatus.textContent = '인식 중...';
+    else if(state === 'done')      voiceStatus.textContent = '인식 완료';
+    else if(state === 'error')     voiceStatus.textContent = '오류';
+  }
+  if(overlayVoiceStatus){
+    if(state === 'idle')      overlayVoiceStatus.textContent = '대기 중';
+    else if(state === 'listening') overlayVoiceStatus.textContent = '듣는 중... (최대 3초)';
+    else if(state === 'thinking')  overlayVoiceStatus.textContent = '인식 중...';
+    else if(state === 'done')      overlayVoiceStatus.textContent = '인식 완료';
+    else if(state === 'error')     overlayVoiceStatus.textContent = '오류';
+  }
+  if(typeof msg === 'string'){
+    if(voiceText) voiceText.textContent = msg;
+    if(overlayVoiceText) overlayVoiceText.textContent = msg;
+  }
+}
+
+function ensureSpeechRecognition(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    return null;
+  }
+  if(!recognition){
+    recognition = new SR();
+    recognition.lang = 'ko-KR';
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 3;
+
+    recognition.onstart = function(){
+      recognizing = true;
+      if(voiceBtn) voiceBtn.classList.add('listening');
+      if(overlayVoiceBtn) overlayVoiceBtn.classList.add('listening');
+      updateVoiceUI('listening', '지금 말해 주세요...');
+    };
+    recognition.onerror = function(e){
+      recognizing = false;
+      if(voiceBtn) voiceBtn.classList.remove('listening');
+      if(overlayVoiceBtn) overlayVoiceBtn.classList.remove('listening');
+      clearTimeout(listenTimer);
+      log('❌ 음성 인식 오류: '+ (e && e.error ? e.error : e));
+      updateVoiceUI('error', '음성 인식 오류가 발생했습니다. 다시 시도해 주세요.');
+    };
+    recognition.onresult = function(event){
+      var interim='', finalText='';
+      for(var i=0;i<event.results.length;i++){
+        var res = event.results[i];
+        if(res.isFinal) finalText += res[0].transcript;
+        else interim += res[0].transcript;
+      }
+      var display = finalText || interim;
+      if(display){
+        updateVoiceUI('listening', display);
+        lastTranscript = display;
+      }
+    };
+    recognition.onend = function(){
+      recognizing = false;
+      if(voiceBtn) voiceBtn.classList.remove('listening');
+      if(overlayVoiceBtn) overlayVoiceBtn.classList.remove('listening');
+      clearTimeout(listenTimer);
+      if(lastTranscript){
+        updateVoiceUI('done', lastTranscript);
+        handleVoiceCommand(lastTranscript);
+      }else{
+        updateVoiceUI('idle', '인식된 문장이 없습니다. 다시 시도해 주세요.');
+      }
+    };
+  }
+  return recognition;
+}
+
+function startVoiceRecognition(){
+  var rec = ensureSpeechRecognition();
+  if(!rec) return;
+  if(recognizing){
+    try{ rec.stop(); }catch(e){}
+    return;
+  }
+  lastTranscript = '';
+  try{
+    rec.start();
+    updateVoiceUI('listening', '지금 말해 주세요...');
+    listenTimer = setTimeout(function(){
+      try{ rec.stop(); }catch(e){}
+    }, 3000);
+  }catch(e){
+    log('⚠️ 음성 인식 시작 실패: '+e);
+    updateVoiceUI('error', '음성 인식을 시작할 수 없습니다.');
+  }
+}
+if(voiceBtn) voiceBtn.addEventListener('click', startVoiceRecognition);
+if(overlayVoiceBtn) overlayVoiceBtn.addEventListener('click', startVoiceRecognition);
+
+function handleVoiceCommand(text){
+  if(!text){
+    log('🎙 인식 결과가 비어 있습니다.');
+    return;
+  }
+  log('🎙 인식 문장: "'+ text + '"');
+}
+
+/* ================= 끝 ================= */
 </script>
 
 <script id="xrobo-hsplit-script">
@@ -2463,7 +1991,6 @@ function refreshMotionProfileInfo(){
                typeof multiServoConfigs.clear==='function') multiServoConfigs.clear();
           }catch(_){}
           try{ if(typeof log === 'function') log('🆕 새 프로젝트'); }catch(_){}
-          try{ if(window.drawApi && typeof window.drawApi.reanalyzeIfPossible === 'function') window.drawApi.reanalyzeIfPossible(); }catch(_){}
         }
       }else{
         if(confirm('페이지를 새로고침하여 새로 시작할까요?')){
@@ -2682,7 +2209,7 @@ function refreshMotionProfileInfo(){
         }catch(_){}
         activeField = null;
       }else if(activeInput){
-        const { val } = evaluateAndClamp(buffer, activeInput);
+        const { ok, val } = evaluateAndClamp(buffer, activeInput);
         activeInput.value = val;
         dispatch(activeInput,'input');
         dispatch(activeInput,'change');
@@ -2750,7 +2277,7 @@ function refreshMotionProfileInfo(){
     try{
       const uaOk = /Android/i.test(navigator.userAgent||'');
       if(uaOk && t.matches &&
-         (t.matches('#drawSettingsBody input') || t.matches('#drawSettingsBody select'))){
+         t.matches('#servoModal .speedbox input, #boardStage .speedbox input')){
         try{
           t.setAttribute('inputmode','none');
           t.setAttribute('autocomplete','off');
@@ -2760,7 +2287,9 @@ function refreshMotionProfileInfo(){
           t.setAttribute('readonly','readonly');
           setTimeout(()=>{ try{ t.removeAttribute('readonly'); }catch(_){ } }, 0);
         }catch(_){}
-        if(t.tagName === 'INPUT') openForInput(t);
+        openForInput(t);
+        const onBlur = ()=>{ try{ commit(); }catch(_){ cancel(); } t.removeEventListener('blur', onBlur); };
+        t.addEventListener('blur', onBlur);
       }
     }catch(_){}
   }, true);
@@ -2798,5 +2327,816 @@ function refreshMotionProfileInfo(){
 
 })();
 </script>
+
+<script id="xrobo-draw-path-script">
+(function(){
+  var $id = function(id){ return document.getElementById(id); };
+
+  var drawBtn = $id('drawModeBtn');
+  var overlay = $id('drawOverlay');
+  var stage = $id('drawStage');
+  var canvas = $id('drawCanvas');
+  var summaryEl = $id('drawSummary');
+  var previewEl = $id('drawCommandPreview');
+  var clearBtn = $id('drawClearBtn');
+  var analyzeBtn = $id('drawAnalyzeBtn');
+  var executeBtn = $id('drawExecuteBtn');
+  var closeBtn = $id('drawCloseBtn');
+  if(!drawBtn || !overlay || !stage || !canvas || !summaryEl || !previewEl || !clearBtn || !analyzeBtn || !executeBtn || !closeBtn){
+    return;
+  }
+
+  var ctx = canvas.getContext('2d');
+  var drawState = {
+    open: false,
+    drawing: false,
+    pointerId: null,
+    points: [],
+    analysis: null,
+    cssWidth: 0,
+    cssHeight: 0,
+    executing: false,
+    execToken: 0
+  };
+  window.isDrawExecuting = false;
+
+  function clamp(v, min, max){
+    if(typeof clampVal === 'function') return clampVal(v, min, max);
+    return v < min ? min : (v > max ? max : v);
+  }
+
+  function round2(v){
+    return Math.round(v * 100) / 100;
+  }
+
+  function readNum(id, def, min, max){
+    var el = $id(id);
+    if(!el) return def;
+    var n = Number(el.value);
+    if(!isFinite(n)) n = def;
+    if(isFinite(min)) n = Math.max(min, n);
+    if(isFinite(max)) n = Math.min(max, n);
+    if(typeof min !== 'undefined' || typeof max !== 'undefined'){
+      el.value = String(n);
+    }
+    return n;
+  }
+
+  function getDrawConfig(){
+    var minSpeed = readNum('drawMinSpeed', 8, 1, 20);
+    var maxSpeed = readNum('drawMaxSpeed', 18, 1, 20);
+    if(minSpeed > maxSpeed){
+      var t = minSpeed;
+      minSpeed = maxSpeed;
+      maxSpeed = t;
+      $id('drawMinSpeed').value = String(minSpeed);
+      $id('drawMaxSpeed').value = String(maxSpeed);
+    }
+    return {
+      minSpeed: minSpeed,
+      maxSpeed: maxSpeed,
+      timeScale: readNum('drawTimeScale', 1.2, 0.2, 4),
+      turnSpeed: readNum('drawTurnSpeed', 12, 1, 20),
+      turn90Ms: readNum('drawTurn90Ms', 360, 80, 2000),
+      snapCount: Number(($id('drawSnapMode') && $id('drawSnapMode').value) || '4') === 8 ? 8 : 4,
+      turnInvert: (($id('drawTurnInvert') && $id('drawTurnInvert').value) || '0') === '1',
+      minSegLen: readNum('drawMinSegLen', 18, 6, 200)
+    };
+  }
+
+  function setSummary(text){
+    summaryEl.textContent = text;
+  }
+
+  function setPreview(text){
+    previewEl.textContent = text;
+  }
+
+  function initialSummary(){
+    setSummary('화면에 손으로 선을 한 번 그려 주세요.\n예: ㄱ자 → 전진 → 우회전 → 전진');
+    setPreview('명령 미리보기: -');
+  }
+
+  function updateExecuteButton(){
+    executeBtn.textContent = drawState.executing ? '정지' : '로봇 실행';
+    executeBtn.classList.toggle('stop', !!drawState.executing);
+  }
+
+  function syncDrawButtonState(){
+    var busy = !!isRunning;
+    drawBtn.disabled = busy;
+    drawBtn.style.opacity = busy ? '.55' : '1';
+    drawBtn.style.cursor = busy ? 'not-allowed' : 'pointer';
+  }
+
+  function openDrawOverlay(){
+    if(isRunning){
+      alert('테스트 또는 전체화면 실행을 먼저 정지한 뒤 손그림 기능을 사용해 주세요.');
+      return;
+    }
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+    drawState.open = true;
+    resizeDrawCanvas();
+    renderDrawCanvas();
+  }
+
+  function closeDrawOverlay(){
+    if(drawState.executing){
+      stopDrawExecution();
+    }
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    drawState.open = false;
+  }
+
+  function clearDrawPath(resetText){
+    if(drawState.executing) return;
+    drawState.points = [];
+    drawState.analysis = null;
+    renderDrawCanvas();
+    if(resetText !== false){
+      initialSummary();
+    }
+  }
+
+  function resizeDrawCanvas(){
+    var rect = stage.getBoundingClientRect();
+    if(!rect.width || !rect.height) return;
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawState.cssWidth = rect.width;
+    drawState.cssHeight = rect.height;
+  }
+
+  function canvasPointFromEvent(e){
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      t: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()
+    };
+  }
+
+  function dist(a, b){
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function shouldAppendPoint(last, p){
+    var d = dist(last, p);
+    var dt = p.t - last.t;
+    return d >= 2.5 || dt >= 24;
+  }
+
+  function onDrawPointerDown(e){
+    if(drawState.executing) return;
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    if(drawState.points.length){
+      drawState.points = [];
+      drawState.analysis = null;
+    }
+    drawState.drawing = true;
+    drawState.pointerId = e.pointerId;
+    if(canvas.setPointerCapture){
+      try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
+    }
+    var p = canvasPointFromEvent(e);
+    drawState.points.push(p);
+    renderDrawCanvas();
+    setSummary('그리는 중입니다. 손을 떼면 자동으로 분석합니다.');
+    setPreview('명령 미리보기: 분석 중...');
+  }
+
+  function onDrawPointerMove(e){
+    if(!drawState.drawing || e.pointerId !== drawState.pointerId) return;
+    e.preventDefault();
+    var p = canvasPointFromEvent(e);
+    var pts = drawState.points;
+    var last = pts[pts.length - 1];
+    if(!last){
+      pts.push(p);
+    }else if(shouldAppendPoint(last, p)){
+      pts.push(p);
+    }else{
+      pts[pts.length - 1] = p;
+    }
+    renderDrawCanvas();
+  }
+
+  function finishDrawing(e){
+    if(!drawState.drawing) return;
+    if(typeof e !== 'undefined' && e && e.pointerId !== drawState.pointerId) return;
+    drawState.drawing = false;
+    drawState.pointerId = null;
+    if(drawState.points.length < 2){
+      setSummary('선이 너무 짧습니다. 조금 더 길게 그려 주세요.');
+      setPreview('명령 미리보기: -');
+      renderDrawCanvas();
+      return;
+    }
+    analyzeCurrentDrawing();
+  }
+
+  function filterPoints(points, minDist){
+    if(!points || points.length < 2) return (points || []).slice();
+    var out = [points[0]];
+    for(var i=1;i<points.length;i++){
+      var p = points[i];
+      var prev = out[out.length - 1];
+      if(dist(prev, p) >= minDist || i === points.length - 1){
+        out.push(p);
+      }else{
+        out[out.length - 1] = { x:p.x, y:p.y, t:p.t };
+      }
+    }
+    return out;
+  }
+
+  function smoothPoints(points, radius){
+    if(!points || points.length <= 2) return (points || []).slice();
+    var out = [];
+    for(var i=0;i<points.length;i++){
+      var sx = 0, sy = 0, count = 0;
+      for(var j=Math.max(0, i-radius); j<=Math.min(points.length-1, i+radius); j++){
+        sx += points[j].x;
+        sy += points[j].y;
+        count++;
+      }
+      out.push({
+        x: sx / count,
+        y: sy / count,
+        t: points[i].t
+      });
+    }
+    if(out.length){
+      out[0] = { x:points[0].x, y:points[0].y, t:points[0].t };
+      out[out.length-1] = { x:points[points.length-1].x, y:points[points.length-1].y, t:points[points.length-1].t };
+    }
+    return out;
+  }
+
+  function perpendicularDistance(p, p1, p2){
+    var x = p.x, y = p.y;
+    var x1 = p1.x, y1 = p1.y;
+    var x2 = p2.x, y2 = p2.y;
+    var dx = x2 - x1;
+    var dy = y2 - y1;
+    if(dx === 0 && dy === 0) return Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
+    var t = ((x - x1) * dx + (y - y1) * dy) / (dx*dx + dy*dy);
+    var px = x1 + t * dx;
+    var py = y1 + t * dy;
+    var ddx = x - px;
+    var ddy = y - py;
+    return Math.sqrt(ddx*ddx + ddy*ddy);
+  }
+
+  function rdp(points, epsilon){
+    if(!points || points.length < 3) return (points || []).slice();
+    var first = points[0];
+    var last = points[points.length - 1];
+    var index = -1;
+    var dmax = 0;
+    for(var i=1;i<points.length-1;i++){
+      var d = perpendicularDistance(points[i], first, last);
+      if(d > dmax){
+        index = i;
+        dmax = d;
+      }
+    }
+    if(dmax > epsilon && index > 0){
+      var left = rdp(points.slice(0, index + 1), epsilon);
+      var right = rdp(points.slice(index), epsilon);
+      return left.slice(0, -1).concat(right);
+    }
+    return [first, last];
+  }
+
+  function headingFromVector(dx, dy){
+    var deg = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if(deg < 0) deg += 360;
+    return deg;
+  }
+
+  function snapHeading(deg, snapCount){
+    var step = 360 / snapCount;
+    var snapped = Math.round(deg / step) * step;
+    snapped = ((snapped % 360) + 360) % 360;
+    return snapped;
+  }
+
+  function signedTurnDelta(fromDeg, toDeg){
+    var diff = ((toDeg - fromDeg + 540) % 360) - 180;
+    if(diff === -180) diff = 180;
+    return diff;
+  }
+
+  function formatHeading(deg){
+    var d = ((deg % 360) + 360) % 360;
+    if(d === 0) return '위';
+    if(d === 45) return '오른쪽 위';
+    if(d === 90) return '오른쪽';
+    if(d === 135) return '오른쪽 아래';
+    if(d === 180) return '아래';
+    if(d === 225) return '왼쪽 아래';
+    if(d === 270) return '왼쪽';
+    if(d === 315) return '왼쪽 위';
+    return String(d) + '°';
+  }
+
+  function buildSegments(points, cfg){
+    var segs = [];
+    if(!points || points.length < 2) return segs;
+    for(var i=1;i<points.length;i++){
+      var a = points[i-1];
+      var b = points[i];
+      var len = dist(a, b);
+      if(len < cfg.minSegLen) continue;
+      var dur = Math.max(40, Math.round(b.t - a.t));
+      var rawHeading = headingFromVector(b.x - a.x, b.y - a.y);
+      var heading = snapHeading(rawHeading, cfg.snapCount);
+      var seg = {
+        start: a,
+        end: b,
+        length: len,
+        durationMs: dur,
+        avgFingerSpeed: len / dur,
+        rawHeading: rawHeading,
+        heading: heading
+      };
+      var prev = segs[segs.length - 1];
+      if(prev && Math.abs(signedTurnDelta(prev.heading, seg.heading)) < 1){
+        prev.end = b;
+        prev.length += len;
+        prev.durationMs += dur;
+        prev.avgFingerSpeed = prev.length / Math.max(1, prev.durationMs);
+      }else{
+        segs.push(seg);
+      }
+    }
+    return segs.slice(0, 12);
+  }
+
+  function makePreviewPoints(segments){
+    if(!segments || !segments.length) return [];
+    var pts = [{ x: segments[0].start.x, y: segments[0].start.y }];
+    var cur = { x: segments[0].start.x, y: segments[0].start.y };
+    for(var i=0;i<segments.length;i++){
+      var seg = segments[i];
+      var rad = seg.heading * Math.PI / 180;
+      cur = {
+        x: cur.x + Math.sin(rad) * seg.length,
+        y: cur.y - Math.cos(rad) * seg.length
+      };
+      pts.push(cur);
+    }
+    return pts;
+  }
+
+  function mapSegmentSpeed(seg, minV, maxV, cfg){
+    if(!isFinite(seg.avgFingerSpeed) || seg.avgFingerSpeed <= 0){
+      return Math.round((cfg.minSpeed + cfg.maxSpeed) / 2);
+    }
+    if(!isFinite(minV) || !isFinite(maxV) || Math.abs(maxV - minV) < 0.03){
+      return Math.round((cfg.minSpeed + cfg.maxSpeed) / 2);
+    }
+    var ratio = (seg.avgFingerSpeed - minV) / (maxV - minV);
+    ratio = clamp(ratio, 0, 1);
+    return Math.round(cfg.minSpeed + ratio * (cfg.maxSpeed - cfg.minSpeed));
+  }
+
+  function makeTurnCommand(delta, cfg){
+    if(!delta) return null;
+    var speed = Math.max(1, Math.min(20, Math.round(cfg.turnSpeed)));
+    var duration = clamp(Math.round(cfg.turn90Ms * Math.abs(delta) / 90), 60, 3000);
+    var right = delta > 0;
+    var m1, m2;
+    if(right){
+      m1 = cfg.turnInvert ? -speed : speed;
+      m2 = cfg.turnInvert ? speed : -speed;
+    }else{
+      m1 = cfg.turnInvert ? speed : -speed;
+      m2 = cfg.turnInvert ? -speed : speed;
+    }
+    return {
+      kind: 'turn',
+      dir: right ? '우회전' : '좌회전',
+      angle: Math.abs(delta),
+      speed: speed,
+      duration: duration,
+      s: 'M12 ' + m1 + ' ' + m2 + ' ' + duration,
+      label: (right ? '우회전' : '좌회전') + '(' + Math.abs(delta) + '°, ' + duration + 'ms)'
+    };
+  }
+
+  function compileAnalysis(segments, cfg){
+    var analysis = {
+      segments: segments || [],
+      simplified: [],
+      previewPoints: [],
+      commands: [],
+      previewParts: []
+    };
+    if(!segments || !segments.length) return analysis;
+
+    var speeds = [];
+    for(var i=0;i<segments.length;i++){
+      if(isFinite(segments[i].avgFingerSpeed)) speeds.push(segments[i].avgFingerSpeed);
+    }
+    var minV = speeds.length ? Math.min.apply(null, speeds) : NaN;
+    var maxV = speeds.length ? Math.max.apply(null, speeds) : NaN;
+
+    var heading = 0; // 시작 방향: 위쪽
+    for(var k=0;k<segments.length;k++){
+      var seg = segments[k];
+      var delta = signedTurnDelta(heading, seg.heading);
+      if(Math.abs(delta) >= 1){
+        var turnCmd = makeTurnCommand(delta, cfg);
+        if(turnCmd){
+          analysis.commands.push(turnCmd);
+          analysis.previewParts.push(turnCmd.label);
+        }
+      }
+      var moveSpeed = mapSegmentSpeed(seg, minV, maxV, cfg);
+      var moveDuration = clamp(Math.round(seg.durationMs * cfg.timeScale), 120, 4000);
+      var moveCmd = {
+        kind: 'move',
+        speed: moveSpeed,
+        duration: moveDuration,
+        heading: seg.heading,
+        s: 'M12 ' + moveSpeed + ' ' + moveSpeed + ' ' + moveDuration,
+        label: '전진(' + moveSpeed + ', ' + moveDuration + 'ms)'
+      };
+      analysis.commands.push(moveCmd);
+      analysis.previewParts.push(moveCmd.label);
+      heading = seg.heading;
+    }
+    analysis.previewPoints = makePreviewPoints(segments);
+    return analysis;
+  }
+
+  function analyzeCurrentDrawing(){
+    if(drawState.points.length < 2){
+      setSummary('선이 너무 짧습니다. 조금 더 길게 그려 주세요.');
+      setPreview('명령 미리보기: -');
+      drawState.analysis = null;
+      renderDrawCanvas();
+      return null;
+    }
+
+    var cfg = getDrawConfig();
+    var filtered = filterPoints(drawState.points, 3);
+    var smooth = smoothPoints(filtered, 2);
+    var epsilon = Math.max(8, Math.min(20, Math.min(drawState.cssWidth || 320, drawState.cssHeight || 320) * 0.02));
+    var simplified = rdp(smooth, epsilon);
+    if(simplified.length < 2){
+      simplified = [smooth[0], smooth[smooth.length - 1]];
+    }
+    var segments = buildSegments(simplified, cfg);
+
+    if(!segments.length && simplified.length >= 2){
+      var fallbackLen = dist(simplified[0], simplified[simplified.length - 1]);
+      if(fallbackLen >= cfg.minSegLen){
+        segments = buildSegments([simplified[0], simplified[simplified.length - 1]], cfg);
+      }
+    }
+
+    var analysis = compileAnalysis(segments, cfg);
+    analysis.simplified = simplified;
+    drawState.analysis = analysis;
+    renderDrawCanvas();
+
+    if(!analysis.commands.length){
+      setSummary('경로가 너무 짧거나 흔들림이 많아 명령으로 바꾸지 못했습니다.\n조금 더 길고 분명하게 그려 주세요.');
+      setPreview('명령 미리보기: -');
+      return analysis;
+    }
+
+    var lines = [];
+    lines.push('감지한 선분: ' + analysis.segments.length + '개');
+    lines.push('방향: ' + analysis.segments.map(function(seg){ return formatHeading(seg.heading); }).join(' → '));
+    lines.push('해석: ' + analysis.previewParts.join(' → '));
+    lines.push('좌우 회전이 반대로 보이면 세부 설정에서 "회전 방향"을 반전으로 바꿔 주세요.');
+    if(!isConnected){
+      lines.push('현재 BLE가 연결되어 있지 않아 실행 시 로그만 표시됩니다.');
+    }
+    setSummary(lines.join('\n'));
+
+    var cmdLines = ['명령 미리보기:'];
+    for(var i=0;i<analysis.commands.length;i++){
+      var cmd = analysis.commands[i];
+      cmdLines.push((i+1) + '. ' + cmd.s + '    // ' + cmd.label);
+    }
+    setPreview(cmdLines.join('\n'));
+    return analysis;
+  }
+
+  function drawGrid(w, h){
+    ctx.save();
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = 'rgba(148,163,184,.12)';
+    ctx.lineWidth = 1;
+    var step = Math.max(24, Math.round(Math.min(w, h) / 10));
+    for(var x=step; x<w; x+=step){
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for(var y=step; y<h; y+=step){
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(59,130,246,.22)';
+    ctx.setLineDash([8, 8]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 18);
+    ctx.lineTo(w / 2, h - 18);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(96,165,250,.28)';
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 14);
+    ctx.lineTo(w / 2 - 10, 34);
+    ctx.lineTo(w / 2 + 10, 34);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPolyline(points, color, width){
+    if(!points || points.length < 2) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for(var i=1;i<points.length;i++){
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawEndpoints(points, startColor, endColor, radius){
+    if(!points || !points.length) return;
+    var first = points[0];
+    var last = points[points.length - 1];
+    ctx.save();
+    ctx.fillStyle = startColor;
+    ctx.beginPath();
+    ctx.arc(first.x, first.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = endColor;
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPreviewLabels(points){
+    if(!points || points.length < 2) return;
+    ctx.save();
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for(var i=1;i<points.length;i++){
+      var a = points[i-1];
+      var b = points[i];
+      var mx = (a.x + b.x) / 2;
+      var my = (a.y + b.y) / 2;
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(mx, my, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#082f49';
+      ctx.fillText(String(i), mx, my + .5);
+    }
+    ctx.restore();
+  }
+
+  function drawEmptyHint(w, h){
+    ctx.save();
+    ctx.fillStyle = 'rgba(226,232,240,.85)';
+    ctx.font = '700 18px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('손으로 경로를 그려 주세요', w / 2, h / 2 - 6);
+    ctx.fillStyle = 'rgba(148,163,184,.88)';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.fillText('위쪽을 시작 방향으로 해석합니다.', w / 2, h / 2 + 20);
+    ctx.restore();
+  }
+
+  function renderDrawCanvas(){
+    var w = drawState.cssWidth;
+    var h = drawState.cssHeight;
+    if(!w || !h) return;
+    drawGrid(w, h);
+
+    if(!drawState.points.length){
+      drawEmptyHint(w, h);
+      return;
+    }
+
+    drawPolyline(drawState.points, 'rgba(251,191,36,.92)', 3);
+    drawEndpoints(drawState.points, '#22c55e', '#ef4444', 5);
+
+    if(drawState.analysis && drawState.analysis.previewPoints && drawState.analysis.previewPoints.length > 1){
+      drawPolyline(drawState.analysis.previewPoints, 'rgba(34,197,94,.95)', 4);
+      drawPreviewLabels(drawState.analysis.previewPoints);
+    }else if(drawState.analysis && drawState.analysis.simplified && drawState.analysis.simplified.length > 1){
+      drawPolyline(drawState.analysis.simplified, 'rgba(56,189,248,.82)', 4);
+    }
+  }
+
+  function sleep(ms){
+    return new Promise(function(resolve){ setTimeout(resolve, ms); });
+  }
+
+  async function safeStopRobot(){
+    try{
+      await sendRaw('S');
+    }catch(_){}
+  }
+
+  function stopDrawExecution(){
+    if(!drawState.executing) return;
+    drawState.execToken++;
+    drawState.executing = false;
+    window.isDrawExecuting = false;
+    updateExecuteButton();
+    syncDrawButtonState();
+    safeStopRobot();
+    try{ if(typeof log === 'function') log('⏹ 손그림 실행 정지'); }catch(_){}
+  }
+
+  async function executeDrawCommands(){
+    if(drawState.executing){
+      stopDrawExecution();
+      return;
+    }
+    if(isRunning){
+      alert('테스트 또는 전체화면 실행을 먼저 정지한 뒤 손그림 실행을 시작해 주세요.');
+      return;
+    }
+    var analysis = drawState.analysis || analyzeCurrentDrawing();
+    if(!analysis || !analysis.commands || !analysis.commands.length){
+      alert('먼저 선을 그린 뒤 분석해 주세요.');
+      return;
+    }
+
+    drawState.executing = true;
+    window.isDrawExecuting = true;
+    updateExecuteButton();
+    syncDrawButtonState();
+
+    var token = ++drawState.execToken;
+    try{
+      if(typeof log === 'function') log('🖍 손그림 실행 시작');
+      for(var i=0;i<analysis.commands.length;i++){
+        if(token !== drawState.execToken) break;
+        var cmd = analysis.commands[i];
+        await sendRaw(cmd.s);
+        if(cmd.duration > 0){
+          await sleep(cmd.duration);
+        }
+      }
+      if(token === drawState.execToken){
+        if(typeof log === 'function') log('✅ 손그림 실행 완료');
+      }
+    }catch(err){
+      try{ if(typeof log === 'function') log('⚠️ 손그림 실행 오류: ' + err); }catch(_){}
+    }finally{
+      await safeStopRobot();
+      drawState.executing = false;
+      window.isDrawExecuting = false;
+      updateExecuteButton();
+      syncDrawButtonState();
+    }
+  }
+
+  function bindSettingsToReanalyze(id){
+    var el = $id(id);
+    if(!el) return;
+    var handler = function(){
+      if(drawState.points.length >= 2 && !drawState.drawing){
+        analyzeCurrentDrawing();
+      }
+    };
+    el.addEventListener('change', handler);
+    el.addEventListener('input', handler);
+  }
+
+  drawBtn.addEventListener('click', openDrawOverlay);
+  closeBtn.addEventListener('click', closeDrawOverlay);
+  clearBtn.addEventListener('click', function(){ clearDrawPath(true); });
+  analyzeBtn.addEventListener('click', function(){ analyzeCurrentDrawing(); });
+  executeBtn.addEventListener('click', function(){ executeDrawCommands(); });
+
+  canvas.addEventListener('pointerdown', onDrawPointerDown);
+  canvas.addEventListener('pointermove', onDrawPointerMove);
+  canvas.addEventListener('pointerup', finishDrawing);
+  canvas.addEventListener('pointercancel', finishDrawing);
+  canvas.addEventListener('pointerleave', function(e){
+    if(drawState.drawing && e.pointerType === 'mouse'){
+      finishDrawing(e);
+    }
+  });
+
+  window.addEventListener('resize', function(){
+    if(drawState.open){
+      resizeDrawCanvas();
+      renderDrawCanvas();
+    }
+  });
+  document.addEventListener('fullscreenchange', function(){
+    if(drawState.open){
+      setTimeout(function(){
+        resizeDrawCanvas();
+        renderDrawCanvas();
+      }, 80);
+    }
+    syncDrawButtonState();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && drawState.open){
+      closeDrawOverlay();
+    }
+  });
+
+  bindSettingsToReanalyze('drawMinSpeed');
+  bindSettingsToReanalyze('drawMaxSpeed');
+  bindSettingsToReanalyze('drawTimeScale');
+  bindSettingsToReanalyze('drawTurnSpeed');
+  bindSettingsToReanalyze('drawTurn90Ms');
+  bindSettingsToReanalyze('drawSnapMode');
+  bindSettingsToReanalyze('drawTurnInvert');
+  bindSettingsToReanalyze('drawMinSegLen');
+
+  var originalSetRunning = typeof setRunning === 'function' ? setRunning : null;
+  if(originalSetRunning){
+    setRunning = function(v){
+      var result = originalSetRunning.apply(this, arguments);
+      syncDrawButtonState();
+      if(v && drawState.open){
+        closeDrawOverlay();
+      }
+      return result;
+    };
+  }
+
+  var originalStartTest = typeof startTest === 'function' ? startTest : null;
+  if(originalStartTest){
+    startTest = async function(){
+      if(window.isDrawExecuting){
+        alert('손그림 실행을 먼저 정지해 주세요.');
+        return false;
+      }
+      closeDrawOverlay();
+      return originalStartTest.apply(this, arguments);
+    };
+  }
+
+  var originalStartFullRun = typeof startFullRun === 'function' ? startFullRun : null;
+  if(originalStartFullRun){
+    startFullRun = async function(){
+      if(window.isDrawExecuting){
+        alert('손그림 실행을 먼저 정지해 주세요.');
+        return false;
+      }
+      closeDrawOverlay();
+      return originalStartFullRun.apply(this, arguments);
+    };
+  }
+
+  var originalStopRun = typeof stopRun === 'function' ? stopRun : null;
+  if(originalStopRun){
+    stopRun = async function(){
+      return originalStopRun.apply(this, arguments);
+    };
+  }
+
+  initialSummary();
+  updateExecuteButton();
+  syncDrawButtonState();
+})();
+</script>
+
 </body>
 </html>
