@@ -325,7 +325,7 @@
   #drawPreviewBg{
     position:absolute; inset:20px; z-index:1;
     display:flex; align-items:flex-end; justify-content:flex-start;
-    color:rgba(147,197,253,.16);
+    color:rgba(147,197,253,.18);
     font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size:clamp(15px, 2.3vw, 24px);
     line-height:1.65; white-space:pre-wrap; overflow:hidden;
@@ -811,6 +811,17 @@ var dot=$('statusDot');
 var btnConnect=$('connectToggle'), btnRun=$('runToggle'), btnTest=$('testBtn');
 
 var enc = s=> new TextEncoder().encode(s);
+
+function sendRaw(s){
+  if(!writeChar){
+    log('➡️(BLE 미연결) ' + s);
+    return Promise.resolve();
+  }
+  return writeChar.writeValue(enc(s + '\n'))
+    .then(function(){ log('➡️ ' + s); })
+    .catch(function(e){ log('⚠️ 전송 실패: ' + e); });
+}
+window.sendRaw = sendRaw;
 
 function resetBleRefs(){ bleDevice=null; bleServer=null; bleService=null; writeChar=null; notifyChar=null; }
 function setConnected(v){
@@ -2629,6 +2640,43 @@ document.addEventListener('keydown', function(e){
     return analysis;
   }
 
+  function drawTransparentStageBase(ctx, w, h){
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(148,163,184,.12)';
+    ctx.lineWidth = 1;
+    var step = Math.max(24, Math.round(Math.min(w, h) / 10));
+    for(var x=step; x<w; x+=step){
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for(var y=step; y<h; y+=step){
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    var midX = w / 2;
+    ctx.strokeStyle = 'rgba(96,165,250,.18)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(midX, 16);
+    ctx.lineTo(midX, 56);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(96,165,250,.22)';
+    ctx.beginPath();
+    ctx.moveTo(midX, 10);
+    ctx.lineTo(midX - 9, 28);
+    ctx.lineTo(midX + 9, 28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   function renderDrawCanvas(){
     if(!drawState.cssWidth || !drawState.cssHeight){
       resizeDrawCanvas();
@@ -2637,7 +2685,7 @@ document.addEventListener('keydown', function(e){
     var h = drawState.cssHeight;
     if(!w || !h) return;
 
-    helpers.drawBaseScene(ctx, w, h);
+    drawTransparentStageBase(ctx, w, h);
 
     if(!drawState.points.length){
       helpers.drawHint(ctx, w, h, '선으로 경로를 그려 주세요', '위쪽이 시작 방향입니다.');
