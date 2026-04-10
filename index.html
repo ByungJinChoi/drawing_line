@@ -510,7 +510,8 @@
             <div id="drawHelpBody">1. 위쪽을 시작 방향으로 생각하고 한 번에 한 선을 그립니다.
 2. 손을 떼면 선이 자동으로 명령으로 바뀝니다.
 3. 배경에 보이는 명령 미리보기를 확인한 뒤 로봇 실행을 누릅니다.
-4. 속도와 90° 회전시간은 워크스페이스의 첫 번째 설정 블록에서 바꿀 수 있습니다.</div>
+4. 직선 시간은 10px = 0.1초 기준으로 계산되고, 실제 전송값은 픽셀에 맞는 정확한 ms 값이 들어갑니다.
+5. 회전 시간은 90° 회전시간 설정값을 각도 비율로 나눠 계산하고, 실제 전송값은 정확한 ms 값이 들어갑니다.</div>
             <div id="drawHelpCurrent"></div>
           </div>
         </div>
@@ -1054,8 +1055,14 @@ var runTaskPromise = null;
 function round1(v){
   return Math.round(v * 10) / 10;
 }
+function floor1(v){
+  return Math.floor(v * 10) / 10;
+}
 function formatSecFromMs(ms){
-  return round1(ms / 1000).toFixed(1) + '초';
+  if(!isFinite(ms) || ms <= 0) return '0초';
+  var sec = Math.round(ms) / 1000;
+  var txt = sec.toFixed(2).replace(/\.?0+$/, '');
+  return txt + '초';
 }
 function angleToCanvasRad(deg){
   return (-90 + deg) * Math.PI / 180;
@@ -1286,7 +1293,7 @@ window.XROBO_RENDER_HELPERS = (function(){
         var seg2 = analysis.displaySegments[k];
         if(!seg2.labelPos) continue;
         drawPill(ctx, seg2.labelPos.x, seg2.labelPos.y, [
-          Math.round(seg2.length) + 'px',
+          (isFinite(seg2.lengthPx) ? seg2.lengthPx : Math.round(seg2.length)) + 'px',
           formatSecFromMs(seg2.displayMs)
         ], {
           fill:'rgba(15,23,42,.9)',
@@ -2128,8 +2135,7 @@ document.addEventListener('keydown', function(e){
     headingStep: 10,
     minTurnDeg: 10,
     minSegLen: 16,
-    maxSegments: 18,
-    movePxPerSecAtSpeed1: 20
+    maxSegments: 18
   };
 
   function clamp(v, min, max){
@@ -2141,14 +2147,15 @@ document.addEventListener('keydown', function(e){
     return Math.round(v * 10) / 10;
   }
 
-  function formatDisplayMs(ms){
-    var snapped = snapDisplayMs(ms);
-    return round1(snapped / 1000).toFixed(1) + '초';
+  function floor1(v){
+    return Math.floor(v * 10) / 10;
   }
 
-  function snapDisplayMs(ms){
-    if(!isFinite(ms) || ms <= 0) return 300;
-    return Math.max(300, Math.round(ms / 300) * 300);
+  function formatDisplayMs(ms){
+    if(!isFinite(ms) || ms <= 0) return '0초';
+    var sec = Math.round(ms) / 1000;
+    var txt = sec.toFixed(2).replace(/\.?0+$/, '');
+    return txt + '초';
   }
 
   function dist(a, b){
@@ -2188,15 +2195,14 @@ document.addEventListener('keydown', function(e){
       headingStep: DRAW_DEFAULTS.headingStep,
       minTurnDeg: DRAW_DEFAULTS.minTurnDeg,
       minSegLen: DRAW_DEFAULTS.minSegLen,
-      maxSegments: DRAW_DEFAULTS.maxSegments,
-      movePxPerSecAtSpeed1: DRAW_DEFAULTS.movePxPerSecAtSpeed1
+      maxSegments: DRAW_DEFAULTS.maxSegments
     };
   }
 
   function updateHelpCurrent(){
     if(!helpCurrentEl) return;
     var cfg = getDrawConfig();
-    helpCurrentEl.textContent = '현재 설정: 속도 ' + cfg.speed + ' / 90° 회전시간 ' + cfg.turn90Ms + 'ms';
+    helpCurrentEl.textContent = '현재 설정: 속도 ' + cfg.speed + ' / 90° 회전시간 ' + cfg.turn90Ms + 'ms / 직선 1px=10ms (10px=0.1초)';
   }
 
   function showHelpPanel(){
@@ -2463,12 +2469,14 @@ document.addEventListener('keydown', function(e){
   }
 
   function moveDurationMs(length, cfg){
-    var pxPerSec = Math.max(20, cfg.speed * cfg.movePxPerSecAtSpeed1);
-    return Math.max(150, Math.round(length / pxPerSec * 1000));
+    if(!isFinite(length) || length <= 0) return 0;
+    var px = Math.max(1, Math.round(length));
+    return px * 10;
   }
 
   function turnDurationMs(angle, cfg){
-    return Math.max(20, Math.round(cfg.turn90Ms * Math.abs(angle) / 90));
+    if(!isFinite(angle) || angle === 0) return 0;
+    return Math.max(10, Math.round(cfg.turn90Ms * Math.abs(angle) / 90));
   }
 
   function moveLabelPosition(from, to, heading){
@@ -2540,7 +2548,7 @@ document.addEventListener('keydown', function(e){
 
       if(Math.abs(delta) >= cfg.minTurnDeg){
         var turnMs = turnDurationMs(delta, cfg);
-        var turnDisplayMs = snapDisplayMs(turnMs);
+        var turnDisplayMs = turnMs;
         var right = delta > 0;
         var turnCmd = {
           kind: 'turn',
@@ -2574,16 +2582,18 @@ document.addEventListener('keydown', function(e){
           endHeading: targetHeading
         });
         analysis.totalDurationMs += turnMs;
-        previewLines.push((right ? '우회전' : '좌회전') + ' ' + Math.abs(delta) + '° / ' + formatDisplayMs(turnDisplayMs));
+        previewLines.push((right ? '우회전' : '좌회전') + ' ' + Math.abs(delta) + '° / ' + formatDisplayMs(turnMs) + ' (' + turnMs + 'ms)');
       }
 
       currentHeading = targetHeading;
-      var moveMs = moveDurationMs(actualLength, cfg);
-      var moveDisplayMs = snapDisplayMs(moveMs);
+      var moveLengthPx = Math.max(1, Math.round(actualLength));
+      var moveMs = moveDurationMs(moveLengthPx, cfg);
+      var moveDisplayMs = moveMs;
       var moveCmd = {
         kind: 'move',
         speed: cfg.speed,
         length: actualLength,
+        lengthPx: moveLengthPx,
         heading: currentHeading,
         duration: moveMs,
         displayMs: moveDisplayMs,
@@ -2600,6 +2610,7 @@ document.addEventListener('keydown', function(e){
         renderEnd: { x: renderEnd.x, y: renderEnd.y },
         heading: currentHeading,
         length: actualLength,
+        lengthPx: moveLengthPx,
         displayMs: moveDisplayMs,
         labelPos: moveCmd.labelPos
       });
@@ -2614,7 +2625,7 @@ document.addEventListener('keydown', function(e){
       });
       analysis.totalDurationMs += moveMs;
       analysis.renderPathPoints.push({ x: renderEnd.x, y: renderEnd.y });
-      previewLines.push('전진 ' + Math.round(actualLength) + 'px / ' + formatDisplayMs(moveDisplayMs));
+      previewLines.push('전진 ' + moveLengthPx + 'px / ' + formatDisplayMs(moveMs) + ' (' + moveMs + 'ms)');
     }
 
     analysis.finalHeading = currentHeading;
