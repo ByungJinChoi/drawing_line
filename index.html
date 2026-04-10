@@ -2505,18 +2505,38 @@ document.addEventListener('keydown', function(e){
     };
     if(!segments || !segments.length) return analysis;
 
-    var currentPoint = { x: segments[0].start.x, y: segments[0].start.y };
     var currentHeading = 0;
-    analysis.renderPathPoints.push({ x: currentPoint.x, y: currentPoint.y });
-
     var previewLines = [
       '속도 ' + cfg.speed + ' / 90° ' + cfg.turn90Ms + 'ms'
     ];
 
+    var firstPoint = { x: segments[0].start.x, y: segments[0].start.y };
+    analysis.renderPathPoints.push({ x:firstPoint.x, y:firstPoint.y });
+
     for(var i=0;i<segments.length;i++){
       var seg = segments[i];
+      var renderStart = { x: seg.start.x, y: seg.start.y };
+      var renderEnd = { x: seg.end.x, y: seg.end.y };
       var targetHeading = seg.heading;
       var delta = Math.round(signedTurnDelta(currentHeading, targetHeading) / cfg.headingStep) * cfg.headingStep;
+
+      if(i > 0 && analysis.displaySegments.length){
+        var prevEnd = analysis.displaySegments[analysis.displaySegments.length - 1].renderEnd;
+        if(prevEnd && dist(prevEnd, renderStart) <= 20){
+          renderStart = { x: prevEnd.x, y: prevEnd.y };
+        }
+      }
+
+      var actualLength = dist(renderStart, renderEnd);
+      if(actualLength < 1){
+        var radFallback = targetHeading * Math.PI / 180;
+        var fallbackLen = Math.max(seg.length || 0, cfg.minSegLen);
+        renderEnd = {
+          x: renderStart.x + Math.sin(radFallback) * fallbackLen,
+          y: renderStart.y - Math.cos(radFallback) * fallbackLen
+        };
+        actualLength = dist(renderStart, renderEnd);
+      }
 
       if(Math.abs(delta) >= cfg.minTurnDeg){
         var turnMs = turnDurationMs(delta, cfg);
@@ -2530,10 +2550,10 @@ document.addEventListener('keydown', function(e){
           speed: cfg.speed,
           duration: turnMs,
           displayMs: turnDisplayMs,
-          point: { x: currentPoint.x, y: currentPoint.y },
+          point: { x: renderStart.x, y: renderStart.y },
           startHeading: currentHeading,
           endHeading: targetHeading,
-          labelPos: turnLabelPosition(currentPoint, currentHeading, targetHeading)
+          labelPos: turnLabelPosition(renderStart, currentHeading, targetHeading)
         };
         if(right){
           turnCmd.s = 'M12 ' + cfg.speed + ' ' + (-cfg.speed) + ' ' + turnMs;
@@ -2549,7 +2569,7 @@ document.addEventListener('keydown', function(e){
           kind: 'turn',
           startMs: turnCmd.startMs,
           endMs: turnCmd.endMs,
-          point: { x: currentPoint.x, y: currentPoint.y },
+          point: { x: renderStart.x, y: renderStart.y },
           startHeading: currentHeading,
           endHeading: targetHeading
         });
@@ -2558,33 +2578,28 @@ document.addEventListener('keydown', function(e){
       }
 
       currentHeading = targetHeading;
-      var rad = currentHeading * Math.PI / 180;
-      var nextPoint = {
-        x: currentPoint.x + Math.sin(rad) * seg.length,
-        y: currentPoint.y - Math.cos(rad) * seg.length
-      };
-      var moveMs = moveDurationMs(seg.length, cfg);
+      var moveMs = moveDurationMs(actualLength, cfg);
       var moveDisplayMs = snapDisplayMs(moveMs);
       var moveCmd = {
         kind: 'move',
         speed: cfg.speed,
-        length: seg.length,
+        length: actualLength,
         heading: currentHeading,
         duration: moveMs,
         displayMs: moveDisplayMs,
-        from: { x: currentPoint.x, y: currentPoint.y },
-        to: { x: nextPoint.x, y: nextPoint.y },
-        labelPos: moveLabelPosition(currentPoint, nextPoint, currentHeading),
+        from: { x: renderStart.x, y: renderStart.y },
+        to: { x: renderEnd.x, y: renderEnd.y },
+        labelPos: moveLabelPosition(renderStart, renderEnd, currentHeading),
         s: 'M12 ' + cfg.speed + ' ' + cfg.speed + ' ' + moveMs
       };
       moveCmd.startMs = analysis.totalDurationMs;
       moveCmd.endMs = moveCmd.startMs + moveMs;
 
       analysis.displaySegments.push({
-        renderStart: { x: currentPoint.x, y: currentPoint.y },
-        renderEnd: { x: nextPoint.x, y: nextPoint.y },
+        renderStart: { x: renderStart.x, y: renderStart.y },
+        renderEnd: { x: renderEnd.x, y: renderEnd.y },
         heading: currentHeading,
-        length: seg.length,
+        length: actualLength,
         displayMs: moveDisplayMs,
         labelPos: moveCmd.labelPos
       });
@@ -2598,10 +2613,8 @@ document.addEventListener('keydown', function(e){
         heading: currentHeading
       });
       analysis.totalDurationMs += moveMs;
-      analysis.renderPathPoints.push({ x: nextPoint.x, y: nextPoint.y });
-      previewLines.push('전진 ' + Math.round(seg.length) + 'px / ' + formatDisplayMs(moveDisplayMs));
-
-      currentPoint = nextPoint;
+      analysis.renderPathPoints.push({ x: renderEnd.x, y: renderEnd.y });
+      previewLines.push('전진 ' + Math.round(actualLength) + 'px / ' + formatDisplayMs(moveDisplayMs));
     }
 
     analysis.finalHeading = currentHeading;
@@ -2619,9 +2632,9 @@ document.addEventListener('keydown', function(e){
     }
 
     var cfg = getDrawConfig();
-    var filtered = filterPoints(drawState.points, 3);
-    var smooth = smoothPoints(filtered, 2);
-    var epsilon = Math.max(7, Math.min(18, Math.min(drawState.cssWidth || 320, drawState.cssHeight || 320) * 0.018));
+    var filtered = filterPoints(drawState.points, 2);
+    var smooth = smoothPoints(filtered, 1);
+    var epsilon = Math.max(4, Math.min(10, Math.min(drawState.cssWidth || 320, drawState.cssHeight || 320) * 0.012));
     var simplified = rdp(smooth, epsilon);
     if(simplified.length < 2){
       simplified = [smooth[0], smooth[smooth.length - 1]];
@@ -2633,6 +2646,8 @@ document.addEventListener('keydown', function(e){
     }
 
     var analysis = compileAnalysis(segments, cfg);
+    analysis.rawPoints = drawState.points.slice();
+    analysis.simplifiedPoints = simplified.map(copyPoint);
     drawState.analysis = analysis;
     setPreview(analysis.previewText || '');
     renderDrawCanvas();
