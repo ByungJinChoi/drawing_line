@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO BLE — 자이로 센서 v8</title>
+<title>XROBO BLE — 그리기 주행</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <style>
@@ -101,163 +101,59 @@
     border-radius:12px 0 0 12px; box-shadow:0 2px 10px rgba(0,0,0,.04); overflow:hidden;
     position:relative;
   }
+/* ── 우측 상단: 실행 미리보기 ───────────────── */
+#rightTop{
+  flex:1 1 auto; border-bottom:1px solid #e5e7eb; min-height: 120px;
+  background:#020617; color:#fff;
+  display:flex; align-items:stretch; justify-content:stretch;
+  padding:12px; overflow:hidden;
+}
+.previewWrap{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:20px;
+  overflow:hidden;
+  background:linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.98));
+  border:1px solid rgba(148,163,184,.28);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 16px 40px rgba(0,0,0,.35);
+}
+.previewCanvas{
+  display:block;
+  width:100%;
+  height:100%;
+  touch-action:none;
+}
+.previewHint{
+  position:absolute;
+  inset:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#94a3b8;
+  font-size:13px;
+  line-height:1.65;
+  text-align:center;
+  white-space:pre-line;
+  pointer-events:none;
+  user-select:none;
+}
+.previewBadge{
+  position:absolute;
+  top:12px;
+  left:12px;
+  z-index:3;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(15,23,42,.78);
+  border:1px solid rgba(148,163,184,.24);
+  color:#e2e8f0;
+  font-size:12px;
+  font-weight:700;
+  pointer-events:none;
+}
 
-  /* ── 우측 상단: 자이로 패널 ───────────────── */
-  #rightTop{
-    flex:1 1 auto; border-bottom:1px solid #e5e7eb; min-height: 120px;
-    background:#020617; color:#fff;
-    display:flex; align-items:center; justify-content:center;
-    padding:0; overflow:hidden;
-  }
-
-  .gyroWrap{
-    position:relative;
-    width:100%;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    padding:10px;
-  }
-  .gyroWrap.full{
-    max-width:640px;
-    margin:0 auto;
-  }
-
-  /* 안내 문구 – 보드 위에 겹침, 비율에는 영향 없음 */
-  .gyroGuide{
-    position:absolute;
-    top:8px;
-    left:50%;
-    transform:translateX(-50%);
-    max-width:90%;
-    padding:4px 10px;
-    border-radius:999px;
-    background:rgba(15,23,42,.8);
-    font-size:12px;
-    color:#cbd5f5;
-    text-align:center;
-    pointer-events:none;
-    z-index:8;
-  }
-
-  /* 정사각형 보드 */
-  .gyroCanvas{
-    position:relative;
-    width:min(80vmin, 100%);
-    aspect-ratio:1 / 1;
-    border-radius:18px;
-    background:#000;
-    border:2px solid rgba(148,163,184,.9);
-    overflow:hidden;
-    box-shadow:0 18px 40px rgba(0,0,0,.7);
-  }
-  .gyroWrap.full .gyroCanvas{
-    width:min(90vmin, 90vw, 90vh);
-  }
-
-  /* 파란 공 – 캔버스 크기에 비례 */
-  .gyroBall{
-    position:absolute;
-    top:50%;
-    left:50%;
-    width:14%;
-    height:14%;
-    border-radius:50%;
-    background:#22a3ff;
-    box-shadow:0 0 0 4px rgba(37,99,235,.55), 0 14px 36px rgba(0,0,0,.9);
-    transform:translate(-50%,-50%);
-    transition: transform .06s linear;
-    z-index:3;
-  }
-
-  /* 투명 동그라미 – 캔버스 크기에 비례 */
-  .gyroTarget{
-    position:absolute;
-    width:30%;
-    height:30%;
-    border-radius:50%;
-    border:2px solid rgba(209,213,219,.85);
-    background:transparent;
-    box-shadow:0 0 0 1px rgba(31,41,55,.9) inset;
-    pointer-events:none;
-    z-index:1;
-  }
-  .gyroTarget.front{
-    top:20%; left:50%;
-    transform:translate(-50%,-50%);
-  }
-  .gyroTarget.back{
-    bottom:20%; left:50%;
-    transform:translate(-50%,50%);
-  }
-  .gyroTarget.left{
-    left:20%; top:50%;
-    transform:translate(-50%,-50%);
-  }
-  .gyroTarget.right{
-    right:20%; top:50%;
-    transform:translate(50%,-50%);
-  }
-
-  /* 1,2번 버튼 – 회색 + 약 20% 더 큼 (캔버스 비례) */
-  .gyroBtn{
-    position:absolute;
-    top:6%;
-    width:16.8%;
-    aspect-ratio:1 / 1;
-    border-radius:12px;
-    border:2px solid rgba(209,213,219,.9);
-    background:#4b5563;
-    color:#e5e7eb;
-    font-size:clamp(12px, 2.8vmin, 16px);
-    font-weight:800;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    box-shadow:0 10px 20px rgba(0,0,0,.8);
-    z-index:4;
-  }
-  .gyroBtn1{ left:6%; }
-  .gyroBtn2{ right:6%; }
-  .gyroBtn:active{
-    transform:translateY(1px);
-    box-shadow:0 4px 12px rgba(0,0,0,.8);
-  }
-
-  /* “대기 중” 박스 – 자이로 리모컨 위에 겹침 */
-  .gyroWaitBox{
-    position:absolute;
-    top:6%;
-    left:50%;
-    transform:translateX(-50%);
-    padding:4px 10px;
-    border-radius:999px;
-    border:1px solid rgba(148,163,184,.7);
-    background:rgba(15,23,42,.75);
-    font-size:11px;
-    color:#e5e7eb;
-    pointer-events:none;
-    z-index:7;
-    white-space:nowrap;
-  }
-
-  /* 이벤트 텍스트 – 보드 아래 */
-  .gyroStatus{
-    font-size:12px;
-    color:#e5e7eb;
-    text-align:center;
-    min-height:1.4em;
-  }
-  .gyroEventText{
-    font-weight:600;
-    color:#facc15;
-  }
-
-  /* 로그 리사이저 바 */
+/* 로그 리사이저 바 */
   #rightDivider{
     flex:0 0 6px;
     cursor: row-resize;
@@ -314,13 +210,14 @@
   /* ── 전체화면 오버레이 ───────────────── */
   #playOverlay{
     position:fixed; inset:0; background:#000; color:#fff; display:none; z-index:10000;
+    align-items:center; justify-content:center; padding:18px;
     touch-action:none; overscroll-behavior:contain; -webkit-tap-highlight-color:transparent;
   }
-  #playOverlay.show{ display:flex; flex-direction:column; }
-  #playOverlay .body{
-    flex:1 1 auto;
-    display:flex; align-items:center; justify-content:center;
-    background:#020617;
+  #playOverlay.show{ display:flex; }
+  #playOverlay .playShell{
+    width:min(94vw, 94vh);
+    aspect-ratio:1 / 1;
+    max-width:1100px;
   }
 
   /* === 파일 드롭다운 === */
@@ -487,7 +384,7 @@
   <!-- 헤더 -->
   <header id="appHeader">
     <div id="topbar">
-      <div class="title">XROBO BLE — 자이로 센서 v8</div>
+      <div class="title">XROBO BLE — 그리기 주행</div>
       <div class="spacer"></div>
 
       <!-- 파일 드롭다운 -->
@@ -522,32 +419,13 @@
     <div id="hResizer" class="hsplit" title="좌우 크기 조절 바"></div>
 
     <div id="right">
-      <!-- 우측 상단: 자이로 패널 -->
+      <!-- 우측 상단: 실행 미리보기 -->
       <div id="rightTop">
-        <div class="gyroWrap" id="gyroWrap">
-          <div class="gyroGuide" id="gyroInfoText">
-            테스트나 실행을 누르기 전에 수평을 맞춰 주세요.
-          </div>
-
-          <div class="gyroCanvas" id="gyroCanvas">
-            <button id="gyroBtn1" type="button" class="gyroBtn gyroBtn1">1</button>
-            <button id="gyroBtn2" type="button" class="gyroBtn gyroBtn2">2</button>
-
-            <div class="gyroTarget front" data-dir="front"></div>
-            <div class="gyroTarget back"  data-dir="back"></div>
-            <div class="gyroTarget left"  data-dir="left"></div>
-            <div class="gyroTarget right" data-dir="right"></div>
-
-            <div class="gyroBall" id="gyroBall"></div>
-
-            <div class="gyroWaitBox" id="gyroWaitBox">
-              <span id="gyroWaitText">대기 중</span>
-            </div>
-          </div>
-
-          <div class="gyroStatus">
-            <div id="gyroEventText" class="gyroEventText">이벤트: -</div>
-          </div>
+        <div class="previewWrap" id="runPreviewWrap">
+          <div class="previewBadge">실행 이미지</div>
+          <canvas id="runPreviewCanvas" class="previewCanvas"></canvas>
+          <div class="previewHint" id="runPreviewHint">그리기 창에서 선을 그리면
+여기에 실행 이미지가 표시됩니다.</div>
         </div>
       </div>
 
@@ -561,7 +439,7 @@
 
   <!-- 툴박스 -->
   <xml id="toolbox" style="display:none">
-    <category name="이벤트" colour="#f59e0b">
+    <category name="설정" colour="#f59e0b">
       <block type="xrobo_start"></block>
     </category>
     <category name="출력" colour="#60a5fa">
@@ -594,31 +472,13 @@
     </category>
   </xml>
 
-  <!-- 전체화면 오버레이: 자이로 UI -->
+  <!-- 전체화면 오버레이: 실행 이미지 -->
   <div id="playOverlay" aria-hidden="true">
-    <div class="body">
-      <div id="gyroOverlayWrap" class="gyroWrap full">
-        <div class="gyroGuide" id="gyroOverlayInfoText">
-          테스트나 실행을 누르기 전에 수평을 맞춰 주세요.
-        </div>
-        <div class="gyroCanvas" id="gyroOverlayCanvas">
-          <button id="gyroOverlayBtn1" type="button" class="gyroBtn gyroBtn1">1</button>
-          <button id="gyroOverlayBtn2" type="button" class="gyroBtn gyroBtn2">2</button>
-
-          <div class="gyroTarget front" data-dir="front"></div>
-          <div class="gyroTarget back"  data-dir="back"></div>
-          <div class="gyroTarget left"  data-dir="left"></div>
-          <div class="gyroTarget right" data-dir="right"></div>
-
-          <div class="gyroBall" id="gyroOverlayBall"></div>
-
-          <div class="gyroWaitBox" id="gyroOverlayWaitBox">
-            <span id="gyroOverlayWaitText">대기 중</span>
-          </div>
-        </div>
-        <div class="gyroStatus">
-          <div id="gyroOverlayEventText" class="gyroEventText">이벤트: -</div>
-        </div>
+    <div class="playShell">
+      <div class="previewWrap" id="runOverlayWrap">
+        <div class="previewBadge">전체화면 실행 이미지</div>
+        <canvas id="runOverlayCanvas" class="previewCanvas"></canvas>
+        <div class="previewHint" id="runOverlayHint">실행 이미지가 여기에 표시됩니다.</div>
       </div>
     </div>
   </div>
@@ -650,7 +510,7 @@
             <div id="drawHelpBody">1. 위쪽을 시작 방향으로 생각하고 한 번에 한 선을 그립니다.
 2. 손을 떼면 선이 자동으로 명령으로 바뀝니다.
 3. 배경에 보이는 명령 미리보기를 확인한 뒤 로봇 실행을 누릅니다.
-4. 속도와 90° 회전시간은 워크스페이스의 첫 번째 이벤트 블록에서 바꿀 수 있습니다.</div>
+4. 속도와 90° 회전시간은 워크스페이스의 첫 번째 설정 블록에서 바꿀 수 있습니다.</div>
             <div id="drawHelpCurrent"></div>
           </div>
         </div>
@@ -721,20 +581,7 @@ var LED_TGT=[].concat(PINS_OUT,[["CPU","CPU"]]);
 var LED_MODE=[["밝기","BRIGHT"],["숨쉬기","BREATHE"]];
 var LED_VALS=Array.from({length:20},(_,i)=>[String(i),String(i)]);
 
-/* 이벤트 옵션 */
-var GYRO_EVENT_OPTIONS = [
-  ["앞쪽으로 기울면","TILT_FRONT"],
-  ["뒤쪽으로 기울면","TILT_BACK"],
-  ["왼쪽으로 기울면","TILT_LEFT"],
-  ["오른쪽으로 기울면","TILT_RIGHT"],
-  ["1번 버튼을 누르면","BTN1"],
-  ["2번 버튼을 누르면","BTN2"]
-];
-var GYRO_EVENT_LABELS = {};
-for(var i=0;i<GYRO_EVENT_OPTIONS.length;i++){
-  GYRO_EVENT_LABELS[GYRO_EVENT_OPTIONS[i][1]] = GYRO_EVENT_OPTIONS[i][0];
-}
-var GYRO_GUIDE_TEXT = '테스트나 실행을 누르기 전에 수평을 맞춰 주세요.';
+/* 기본 설정 */
 var XROBO_DRAW_DEFAULT_SPEED = 10;
 var XROBO_DRAW_DEFAULT_TURN90_MS = 800;
 
@@ -772,9 +619,8 @@ function getDrawDriveSettingsFromWorkspace(){
 Blockly.defineBlocksWithJsonArray([
   {
     "type":"xrobo_start",
-    "message0":"%1 때 속도 %2  90°회전 %3 ms",
+    "message0":"속도 %1  90°회전시간 %2 ms 설정",
     "args0":[
-      { "type":"field_dropdown","name":"EVT","options":GYRO_EVENT_OPTIONS },
       { "type":"field_number","name":"SPEED","value":10,"min":1,"max":20,"precision":1 },
       { "type":"field_number","name":"TURN90","value":800,"min":80,"max":5000,"precision":10 }
     ],
@@ -915,35 +761,20 @@ function normalizeProgram(list){
   return out;
 }
 
-/* 워크스페이스에서 이벤트 프로그램 빌드 */
-function buildEventPrograms(){
-  var map = {};
-  var evs = ws.getBlocksByType('xrobo_start', true);
-  for(var i=0;i<evs.length;i++){
-    var block = evs[i];
-    var code = block.getFieldValue('EVT') || '';
-    if(!code) continue;
-
-    var evtSpeed = Number(block.getFieldValue('SPEED'));
-    var evtTurn90 = Number(block.getFieldValue('TURN90'));
-    if(!map[code]){
-      map[code] = {
-        label: (GYRO_EVENT_LABELS[code] || code),
-        list: [],
-        speed: isFinite(evtSpeed) ? clampVal(Math.round(evtSpeed), 1, 20) : XROBO_DRAW_DEFAULT_SPEED,
-        turn90Ms: isFinite(evtTurn90) ? clampVal(Math.round(evtTurn90), 80, 5000) : XROBO_DRAW_DEFAULT_TURN90_MS
-      };
-    }
-
+/* 워크스페이스에서 프로그램 빌드 */
+function buildMainProgram(){
+  var list = [];
+  var blocks = getOrderedXroboStartBlocks();
+  for(var i=0;i<blocks.length;i++){
+    var block = blocks[i];
     var chain = block.getNextBlock();
     if(!chain) continue;
-
-    var prog=[];
+    var prog = [];
     walkChain(chain, prog);
     var norm = normalizeProgram(prog);
-    map[code].list = map[code].list.concat(norm);
+    list = list.concat(norm);
   }
-  return map;
+  return normalizeProgram(list);
 }
 
 /* ================= 헤더/스케일 ================= */
@@ -991,15 +822,10 @@ function setConnected(v){
   if(!v) setRunning(false);
 }
 function setRunning(v){
-  isRunning=v;
+  isRunning = v;
   btnRun.textContent = v ? '■ 정지' : '실행';
   btnRun.style.background = v ? '#ef4444' : '#16a34a';
   btnTest.disabled = v;
-
-  var infoEl = document.getElementById('gyroInfoText');
-  var infoEl2 = document.getElementById('gyroOverlayInfoText');
-  if(infoEl)  infoEl.style.display  = v ? 'none' : 'block';
-  if(infoEl2) infoEl2.style.display = v ? 'none' : 'block';
 }
 
 /* BLE connect/disconnect */
@@ -1209,636 +1035,581 @@ fsBtn.onclick=async function(){
 document.addEventListener('fullscreenchange', syncFSLabel);
 syncFSLabel();
 
-/* ================= 실행/큐 & 이벤트 매핑 ================= */
-var eventPrograms = {};
-var queue = [];
-var queueBusy = false;
-var cancelToken = 0;
 
-function sendRaw(s){
-  if(!writeChar){
-    log('➡️(BLE 미연결) '+s);
-    return Promise.resolve();
-  }
-  return writeChar.writeValue(enc(s+'\n'))
-    .then(()=>{ log('➡️ '+s); })
-    .catch(e=>{ log('⚠️ 전송 실패: '+e); });
+/* ================= 실행 / 미리보기 ================= */
+var runCancelToken = 0;
+var runTaskPromise = null;
+
+function round1(v){
+  return Math.round(v * 10) / 10;
 }
+function formatSecFromMs(ms){
+  return round1(ms / 1000).toFixed(1) + '초';
+}
+function angleToCanvasRad(deg){
+  return (-90 + deg) * Math.PI / 180;
+}
+function copyPt(p){
+  return { x:p.x, y:p.y };
+}
+function lerp(a, b, t){
+  return a + (b - a) * t;
+}
+function interpolatePoint(a, b, t){
+  return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
+}
+function distPt(a, b){
+  var dx = b.x - a.x;
+  var dy = b.y - a.y;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+window.XROBO_RENDER_HELPERS = (function(){
+  function fitCanvas(canvas){
+    if(!canvas) return null;
+    var rect = canvas.getBoundingClientRect();
+    if(!rect.width || !rect.height) return null;
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx:ctx, w:rect.width, h:rect.height };
+  }
+
+  function drawBaseScene(ctx, w, h){
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#0f172a');
+    bg.addColorStop(1, '#020617');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = 'rgba(148,163,184,.12)';
+    ctx.lineWidth = 1;
+    var step = Math.max(24, Math.round(Math.min(w, h) / 10));
+    for(var x=step; x<w; x+=step){
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for(var y=step; y<h; y+=step){
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    var midX = w / 2;
+    ctx.strokeStyle = 'rgba(96,165,250,.18)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(midX, 16);
+    ctx.lineTo(midX, 56);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(96,165,250,.22)';
+    ctx.beginPath();
+    ctx.moveTo(midX, 10);
+    ctx.lineTo(midX - 9, 28);
+    ctx.lineTo(midX + 9, 28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHint(ctx, w, h, title, subtitle){
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(226,232,240,.92)';
+    ctx.font = '700 18px system-ui, sans-serif';
+    ctx.fillText(title || '실행 이미지', w / 2, h / 2 - 10);
+    if(subtitle){
+      ctx.fillStyle = 'rgba(148,163,184,.9)';
+      ctx.font = '13px system-ui, sans-serif';
+      ctx.fillText(subtitle, w / 2, h / 2 + 18);
+    }
+    ctx.restore();
+  }
+
+  function drawPolyline(ctx, points, color, width, dash){
+    if(!points || points.length < 2) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if(dash && dash.length) ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for(var i=1;i<points.length;i++){
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawRawPath(ctx, points){
+    if(!points || points.length < 2) return;
+    drawPolyline(ctx, points, 'rgba(251,191,36,.34)', 3, []);
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r){
+    var rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawPill(ctx, x, y, lines, tone){
+    if(!lines || !lines.length) return;
+    ctx.save();
+    ctx.font = '700 11px system-ui, sans-serif';
+    var maxW = 0;
+    for(var i=0;i<lines.length;i++){
+      maxW = Math.max(maxW, ctx.measureText(lines[i]).width);
+    }
+    var padX = 10;
+    var padY = 7;
+    var lineH = 13;
+    var boxW = maxW + padX * 2;
+    var boxH = lines.length * lineH + padY * 2 - 2;
+    var boxX = x - boxW / 2;
+    var boxY = y - boxH / 2;
+    var palette = tone || {};
+    ctx.fillStyle = palette.fill || 'rgba(15,23,42,.88)';
+    ctx.strokeStyle = palette.stroke || 'rgba(148,163,184,.28)';
+    ctx.lineWidth = 1;
+    drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 11);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = palette.text || '#e2e8f0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for(var j=0;j<lines.length;j++){
+      ctx.fillText(lines[j], x, boxY + padY + 5 + j * lineH);
+    }
+    ctx.restore();
+  }
+
+  function drawRobot(ctx, robot){
+    if(!robot) return;
+    ctx.save();
+    ctx.translate(robot.x, robot.y);
+    ctx.rotate(angleToCanvasRad(robot.heading || 0));
+    ctx.fillStyle = '#38bdf8';
+    ctx.strokeStyle = 'rgba(2,6,23,.78)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -13);
+    ctx.lineTo(10, 9);
+    ctx.lineTo(0, 4);
+    ctx.lineTo(-10, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,.22)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAnalysisScene(ctx, analysis, opts){
+    opts = opts || {};
+    if(!analysis) return;
+    if(analysis.displaySegments){
+      for(var i=0;i<analysis.displaySegments.length;i++){
+        var seg = analysis.displaySegments[i];
+        drawPolyline(ctx, [seg.renderStart, seg.renderEnd], 'rgba(34,197,94,.96)', 4, []);
+      }
+    }
+
+    if(analysis.turns){
+      for(var j=0;j<analysis.turns.length;j++){
+        var turn = analysis.turns[j];
+        var arcR = 22;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(168,85,247,.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(
+          turn.point.x,
+          turn.point.y,
+          arcR,
+          angleToCanvasRad(turn.startHeading),
+          angleToCanvasRad(turn.endHeading),
+          turn.delta < 0
+        );
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(168,85,247,.22)';
+        ctx.beginPath();
+        ctx.arc(turn.point.x, turn.point.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        if(opts.showLabels !== false && turn.labelPos){
+          drawPill(ctx, turn.labelPos.x, turn.labelPos.y, [
+            (turn.dir === 'right' ? '우' : '좌') + ' ' + Math.abs(turn.delta) + '°',
+            formatSecFromMs(turn.displayMs)
+          ], {
+            fill:'rgba(76,29,149,.9)',
+            stroke:'rgba(196,181,253,.3)',
+            text:'#ede9fe'
+          });
+        }
+      }
+    }
+
+    if(analysis.displaySegments && opts.showLabels !== false){
+      for(var k=0;k<analysis.displaySegments.length;k++){
+        var seg2 = analysis.displaySegments[k];
+        if(!seg2.labelPos) continue;
+        drawPill(ctx, seg2.labelPos.x, seg2.labelPos.y, [
+          Math.round(seg2.length) + 'px',
+          formatSecFromMs(seg2.displayMs)
+        ], {
+          fill:'rgba(15,23,42,.9)',
+          stroke:'rgba(148,163,184,.26)',
+          text:'#e2e8f0'
+        });
+      }
+    }
+
+    if(analysis.renderPathPoints && analysis.renderPathPoints.length){
+      var start = analysis.renderPathPoints[0];
+      var end = analysis.renderPathPoints[analysis.renderPathPoints.length - 1];
+
+      ctx.save();
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(start.x, start.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(end.x, end.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if(opts.robot){
+      drawRobot(ctx, opts.robot);
+    }
+  }
+
+  return {
+    fitCanvas: fitCanvas,
+    drawBaseScene: drawBaseScene,
+    drawHint: drawHint,
+    drawRawPath: drawRawPath,
+    drawAnalysisScene: drawAnalysisScene
+  };
+})();
+
+window.XROBO_PREVIEW = (function(){
+  var helpers = window.XROBO_RENDER_HELPERS;
+  var panelCanvas = document.getElementById('runPreviewCanvas');
+  var overlayCanvas = document.getElementById('runOverlayCanvas');
+  var panelHint = document.getElementById('runPreviewHint');
+  var overlayHint = document.getElementById('runOverlayHint');
+  var overlayEl = document.getElementById('playOverlay');
+  var state = {
+    analysis: null,
+    robot: null,
+    rafId: 0,
+    animToken: 0,
+    overlayVisible: false
+  };
+
+  function applyHint(){
+    var text = state.analysis ? '' : '그리기 창에서 선을 그리면\n여기에 실행 이미지가 표시됩니다.';
+    if(panelHint){
+      panelHint.textContent = text;
+      panelHint.style.display = state.analysis ? 'none' : 'flex';
+    }
+    if(overlayHint){
+      overlayHint.textContent = state.analysis ? '실행 중' : '실행 이미지가 여기에 표시됩니다.';
+      overlayHint.style.display = state.analysis ? 'none' : 'flex';
+    }
+  }
+
+  function renderCanvas(canvas, kind){
+    if(!canvas || !helpers) return;
+    var fit = helpers.fitCanvas(canvas);
+    if(!fit) return;
+    helpers.drawBaseScene(fit.ctx, fit.w, fit.h);
+    if(state.analysis){
+      helpers.drawAnalysisScene(fit.ctx, state.analysis, {
+        showLabels: true,
+        robot: state.robot
+      });
+    }else{
+      var subtitle = kind === 'overlay' ? '실행하면 같은 이미지가 크게 표시됩니다.' : '실행 전 경로 확인용 화면입니다.';
+      helpers.drawHint(fit.ctx, fit.w, fit.h, '실행 이미지', subtitle);
+    }
+  }
+
+  function renderAll(){
+    applyHint();
+    renderCanvas(panelCanvas, 'panel');
+    renderCanvas(overlayCanvas, 'overlay');
+  }
+
+  function stopAnimation(){
+    state.animToken++;
+    if(state.rafId){
+      cancelAnimationFrame(state.rafId);
+      state.rafId = 0;
+    }
+    state.robot = null;
+    renderAll();
+  }
+
+  function robotFromTimeline(analysis, elapsed){
+    if(!analysis || !analysis.timeline || !analysis.timeline.length){
+      return null;
+    }
+    var items = analysis.timeline;
+    var lastHeading = 0;
+    var lastPoint = analysis.renderPathPoints && analysis.renderPathPoints.length ? analysis.renderPathPoints[0] : {x:0,y:0};
+    for(var i=0;i<items.length;i++){
+      var item = items[i];
+      if(elapsed <= item.endMs){
+        var span = Math.max(1, item.endMs - item.startMs);
+        var t = clampVal((elapsed - item.startMs) / span, 0, 1);
+        if(item.kind === 'move'){
+          return {
+            x: lerp(item.from.x, item.to.x, t),
+            y: lerp(item.from.y, item.to.y, t),
+            heading: item.heading
+          };
+        }
+        return {
+          x: item.point.x,
+          y: item.point.y,
+          heading: lerp(item.startHeading, item.endHeading, t)
+        };
+      }
+      if(item.kind === 'move'){
+        lastHeading = item.heading;
+        lastPoint = item.to;
+      }else{
+        lastHeading = item.endHeading;
+        lastPoint = item.point;
+      }
+    }
+    return {
+      x: lastPoint.x,
+      y: lastPoint.y,
+      heading: analysis.finalHeading || lastHeading || 0
+    };
+  }
+
+  function startAnimation(analysis){
+    stopAnimation();
+    if(analysis) state.analysis = analysis;
+    if(!state.analysis || !state.analysis.timeline || !state.analysis.timeline.length){
+      renderAll();
+      return;
+    }
+    var token = ++state.animToken;
+    var total = state.analysis.totalDurationMs || 0;
+    var start = performance.now();
+    function step(now){
+      if(token !== state.animToken) return;
+      var elapsed = now - start;
+      if(elapsed >= total){
+        state.robot = robotFromTimeline(state.analysis, total);
+        renderAll();
+        return;
+      }
+      state.robot = robotFromTimeline(state.analysis, elapsed);
+      renderAll();
+      state.rafId = requestAnimationFrame(step);
+    }
+    state.rafId = requestAnimationFrame(step);
+  }
+
+  function showOverlay(show){
+    state.overlayVisible = !!show;
+    if(!overlayEl) return;
+    overlayEl.classList.toggle('show', !!show);
+    overlayEl.setAttribute('aria-hidden', show ? 'false' : 'true');
+    renderAll();
+  }
+
+  function setAnalysis(analysis){
+    state.analysis = analysis || null;
+    state.robot = null;
+    renderAll();
+  }
+
+  function clear(){
+    stopAnimation();
+    state.analysis = null;
+    state.robot = null;
+    renderAll();
+  }
+
+  window.addEventListener('resize', renderAll);
+  document.addEventListener('fullscreenchange', function(){
+    setTimeout(renderAll, 60);
+  });
+
+  renderAll();
+
+  return {
+    setAnalysis: setAnalysis,
+    clear: clear,
+    render: renderAll,
+    resize: renderAll,
+    startAnimation: startAnimation,
+    stopAnimation: stopAnimation,
+    showOverlay: showOverlay,
+    hasAnalysis: function(){ return !!state.analysis; },
+    getAnalysis: function(){ return state.analysis; }
+  };
+})();
+
 async function runList(list, localToken){
   for(var i=0;i<list.length;i++){
-    var ins=list[i];
-    if(localToken !== cancelToken) return;
-    if(ins.type==='CMD'){
+    var ins = list[i];
+    if(localToken !== runCancelToken) return;
+    if(ins.type === 'CMD'){
       await sendRaw(ins.s);
-    }else if(ins.type==='W'){
+    }else if(ins.type === 'W'){
       var ms = (ins.args && ins.args[0]) ? ins.args[0] : 0;
-      if(ms>0) await new Promise(r=>setTimeout(r, ms));
-    }else if(ins.type==='FOR'){
+      if(ms > 0) await new Promise(function(resolve){ setTimeout(resolve, ms); });
+    }else if(ins.type === 'FOR'){
       for(var k=0;k<ins.count;k++){
-        if(localToken !== cancelToken) return;
+        if(localToken !== runCancelToken) return;
         await runList(ins.body, localToken);
       }
     }
   }
 }
-async function processQueue(localToken){
-  if(queueBusy) return;
-  queueBusy = true;
-  try{
-    while(queue.length && localToken === cancelToken){
-      var item = queue.shift();
-      await runList(item.list, localToken);
-    }
-  }finally{
-    queueBusy = false;
-  }
-}
 
-function showGyroEventLabel(text){
-  var label = '이벤트: ' + (text || '-');
-  var p = document.getElementById('gyroEventText');
-  if(p) p.textContent = label;
-  var o = document.getElementById('gyroOverlayEventText');
-  if(o) o.textContent = label;
-}
-
-function triggerEvent(key){
-  if(!isRunning) return;
-  var entry = eventPrograms[key];
-  if(!entry || !entry.list || !entry.list.length) return;
-  queue.push({list: entry.list});
-  log('▶ 이벤트 실행: "'+ (entry.label || key) + '"');
-  showGyroEventLabel(entry.label || key);
-  var myToken = cancelToken;
-  processQueue(myToken);
-}
-
-/* ================= 자이로 UI & 센서 ================= */
-var gyroSupported = (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window);
-var gyroPermissionState = 'unknown';
-var gyroListenerAdded = false;
-var gyroActive = false;
-var gyroMode = 'panel';
-var gyroBaselineFront = 0;
-var gyroBaselineSide  = 0;
-var gyroBaselineSet   = false;
-var gyroNeedsCalibrate = false;
-var gyroInsideFlags = {front:false,back:false,left:false,right:false};
-var gyroState = { panel:null, overlay:null };
-
-var GYRO_FRONT_RANGE = 20;
-var GYRO_SIDE_RANGE  = 20;
-
-/* 현재 화면 회전 각도 */
-function getScreenAngle(){
-  var ang = 0;
-  try{
-    if(window.screen && screen.orientation && typeof screen.orientation.angle === 'number'){
-      ang = screen.orientation.angle;
-    }else if(typeof window.orientation === 'number'){
-      ang = window.orientation;
-    }
-  }catch(e){}
-  ang = ((ang % 360) + 360) % 360;
-  if(ang===0 || ang===90 || ang===180 || ang===270) return ang;
-  return 0;
-}
-
-/* beta/gamma → 화면 기준 front/side */
-function mapTiltAxes(beta, gamma){
-  var angle = getScreenAngle();
-  var front, side;
-  switch(angle){
-    case 90:   // 가로(오른쪽이 위)
-      front =  gamma;
-      side  = -beta;
-      break;
-    case 180:  // 세로 뒤집힘
-      front = -beta;
-      side  = -gamma;
-      break;
-    case 270:  // 가로(왼쪽이 위)
-      front = -gamma;
-      side  =  beta;
-      break;
-    default:   // 세로
-      front = beta;
-      side  = gamma;
-      break;
-  }
-  return { front:front, side:side };
-}
-
-/* 자이로 뷰 생성 */
-function createGyroView(rootId, ballId, btn1Id, btn2Id, infoId, eventId){
-  var root = document.getElementById(rootId);
-  if(!root) return null;
-  var canvas = root.querySelector('.gyroCanvas');
-  var ball = document.getElementById(ballId);
-  var btn1 = document.getElementById(btn1Id);
-  var btn2 = document.getElementById(btn2Id);
-  var infoEl = document.getElementById(infoId);
-  var eventEl = document.getElementById(eventId);
-  var targets = {};
-  if(canvas && canvas.querySelectorAll){
-    var els = canvas.querySelectorAll('.gyroTarget');
-    for(var i=0;i<els.length;i++){
-      var dir = els[i].getAttribute('data-dir');
-      if(dir) targets[dir] = els[i];
-    }
-  }
-  if(btn1){
-    btn1.addEventListener('click', function(ev){
-      ev.stopPropagation();
-      triggerGyroButton(1);
-    });
-  }
-  if(btn2){
-    btn2.addEventListener('click', function(ev){
-      ev.stopPropagation();
-      triggerGyroButton(2);
-    });
-  }
-  return { root:root, canvas:canvas, ball:ball, btn1:btn1, btn2:btn2, infoEl:infoEl, eventEl:eventEl, targets:targets, geometry:null };
-}
-
-function setupGyroViews(){
-  try{
-    gyroState.panel = createGyroView('gyroWrap','gyroBall','gyroBtn1','gyroBtn2','gyroInfoText','gyroEventText');
-    gyroState.overlay = createGyroView('gyroOverlayWrap','gyroOverlayBall','gyroOverlayBtn1','gyroOverlayBtn2','gyroOverlayInfoText','gyroOverlayEventText');
-    refreshGyroGeometry();
-  }catch(e){
-    console.warn('Gyro view init error', e);
-  }
-}
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', setupGyroViews);
-}else{
-  setupGyroViews();
-}
-window.addEventListener('resize', function(){ refreshGyroGeometry(); });
-
-function getActiveGyroView(){
-  if(gyroMode === 'overlay' && gyroState.overlay) return gyroState.overlay;
-  return gyroState.panel || gyroState.overlay || null;
-}
-
-/* 크기 조정은 CSS 비율에 맡기므로 JS에서 별도 조절 없음 */
-function updateGyroViewScale(view, cRect){
-  return;
-}
-
-/* 기하 정보 계산 */
-function refreshGyroGeometry(){
-  ['panel','overlay'].forEach(function(mode){
-    var view = gyroState[mode];
-    if(!view || !view.canvas || !view.ball) return;
-    var cRect = view.canvas.getBoundingClientRect();
-    if(!cRect.width || !cRect.height) return;
-
-    updateGyroViewScale(view, cRect);
-
-    var centerX = cRect.width/2;
-    var centerY = cRect.height/2;
-
-    var ballRect = view.ball.getBoundingClientRect();
-    var ballRadius = ballRect.width/2;
-
-    var targetsInfo = {};
-    var maxX = 0, maxY = 0;
-
-    ['front','back','left','right'].forEach(function(name){
-      var el = view.targets[name];
-      if(!el) return;
-      var r = el.getBoundingClientRect();
-      var tx = (r.left - cRect.left) + r.width/2;
-      var ty = (r.top  - cRect.top ) + r.height/2;
-      var relX = tx - centerX;
-      var relY = ty - centerY;
-      var radius = r.width/2;
-      targetsInfo[name] = { relX:relX, relY:relY, radius:radius };
-      if(name==='left' || name==='right') maxX = Math.max(maxX, Math.abs(relX));
-      if(name==='front'|| name==='back')  maxY = Math.max(maxY, Math.abs(relY));
-    });
-
-    if(!maxX) maxX = cRect.width*0.25;
-    if(!maxY) maxY = cRect.height*0.25;
-
-    view.geometry = {
-      centerX:centerX,
-      centerY:centerY,
-      ballRadius:ballRadius,
-      maxX:maxX,
-      maxY:maxY,
-      targets:targetsInfo
-    };
-  });
-}
-
-/* 안내 문구 변경 */
-function setGyroInfo(where, text){
-  if(typeof text !== 'string') return;
-  if(where==='panel' || where==='all'){
-    var el = document.getElementById('gyroInfoText');
-    if(el) el.textContent = text;
-  }
-  if(where==='overlay' || where==='all'){
-    var el2 = document.getElementById('gyroOverlayInfoText');
-    if(el2) el2.textContent = text;
-  }
-}
-
-/* 버튼 클릭 → BTN 이벤트 */
-function triggerGyroButton(idx){
-  if(!isRunning) return;
-  var code = (idx===1 ? 'BTN1' : 'BTN2');
-  var label = GYRO_EVENT_LABELS[code] || (idx+'번 버튼');
-  triggerEvent(code);
-  showGyroEventLabel(label);
-}
-
-/* 자이로 권한 */
-async function requestGyroPermission(){
-  if(!gyroSupported) return false;
-  if(gyroPermissionState === 'granted') return true;
-  try{
-    if(typeof DeviceOrientationEvent!=='undefined' &&
-       typeof DeviceOrientationEvent.requestPermission === 'function'){
-      var res = await DeviceOrientationEvent.requestPermission();
-      if(res === 'granted'){
-        gyroPermissionState = 'granted';
-        return true;
-      }else{
-        gyroPermissionState = 'denied';
-        return false;
+async function finishRun(localToken){
+  if(localToken !== runCancelToken) return;
+  setRunning(false);
+  try{ await sendRaw('S'); }catch(_){}
+  if(isFullscreenRun){
+    isFullscreenRun = false;
+    if(window.XROBO_PREVIEW) window.XROBO_PREVIEW.showOverlay(false);
+    try{
+      if(document.fullscreenElement && document.exitFullscreen){
+        await document.exitFullscreen();
       }
-    }else{
-      gyroPermissionState = 'granted';
-      return true;
-    }
-  }catch(e){
-    console.warn('Gyro permission error', e);
-    gyroPermissionState = 'denied';
-    return false;
+    }catch(_){}
   }
 }
 
-/* 자이로 시작/정지 */
-async function startGyro(mode){
-  if(!gyroSupported){
-    alert('이 기기에서는 자이로/기울기 센서를 사용할 수 없습니다.\n스마트폰에서 열어 주세요.');
-    return false;
-  }
-  var ok = await requestGyroPermission();
-  if(!ok){
-    alert('자이로 센서를 사용할 수 있는 권한이 없어 기울기 이벤트를 사용할 수 없습니다.');
-    return false;
-  }
-  gyroMode = mode || 'panel';
-  gyroActive = true;
-  gyroNeedsCalibrate = true;
-  gyroBaselineSet = false;
-  gyroInsideFlags = {front:false,back:false,left:false,right:false};
-  if(!gyroListenerAdded){
-    window.addEventListener('deviceorientation', onDeviceOrientation, true);
-    gyroListenerAdded = true;
-  }
-  setTimeout(refreshGyroGeometry, 80);
-  setGyroInfo('all','스마트폰을 수평으로 들고 있으면 기준점을 자동으로 맞춥니다.');
-  return true;
-}
-function stopGyro(){
-  gyroActive = false;
-  gyroNeedsCalibrate = false;
-}
-
-/* 방향 변경 시 기준 재설정 */
-(function(){
-  function orientationChanged(){
-    if(!gyroActive) return;
-    gyroNeedsCalibrate = true;
-    gyroBaselineSet = false;
-    setGyroInfo('all','화면 방향이 바뀌었습니다. 다시 수평으로 들고 기준을 맞춰 주세요.');
-    setTimeout(refreshGyroGeometry, 120);
-  }
-  window.addEventListener('orientationchange', orientationChanged);
-  if(window.screen && screen.orientation && typeof screen.orientation.addEventListener === 'function'){
-    screen.orientation.addEventListener('change', orientationChanged);
-  }
-})();
-
-/* 센서 값 처리 – 좌우만 반대로 변경 */
-function onDeviceOrientation(ev){
-  if(!gyroActive) return;
-  var beta = ev.beta, gamma = ev.gamma;
-  if(typeof beta !== 'number' || typeof gamma !== 'number') return;
-
-  var mapped = mapTiltAxes(beta, gamma);
-  if(gyroNeedsCalibrate){
-    gyroBaselineFront = mapped.front;
-    gyroBaselineSide  = mapped.side;
-    gyroBaselineSet   = true;
-    gyroNeedsCalibrate = false;
-    setGyroInfo('all','기준이 설정되었습니다. 이제 스마트폰을 기울여 보세요.');
-  }
-  if(!gyroBaselineSet) return;
-
-  var dFront = mapped.front - gyroBaselineFront;
-  var dSide  = mapped.side  - gyroBaselineSide;
-
-  var ny = clampVal(-dFront / GYRO_FRONT_RANGE, -1, 1);   // 앞/뒤 (그대로)
-  var nx = clampVal(-dSide  / GYRO_SIDE_RANGE , -1, 1);   // 좌/우 반전
-
-  updateGyroBall(nx, ny);
-}
-
-/* 공 위치 업데이트 + 타겟 충돌 검사 */
-function updateGyroBall(nx, ny){
-  var view = getActiveGyroView();
-  if(!view || !view.ball) return;
-  if(!view.geometry) refreshGyroGeometry();
-  if(!view.geometry) return;
-
-  var g = view.geometry;
-  var offX = g.maxX * clampVal(nx, -1, 1);
-  var offY = g.maxY * clampVal(ny, -1, 1);
-
-  view.ball.style.transform = 'translate(calc(-50% + '+offX+'px), calc(-50% + '+offY+'px))';
-
-  var ballX = g.centerX + offX;
-  var ballY = g.centerY + offY;
-
-  ['front','back','left','right'].forEach(function(name){
-    var info = g.targets[name];
-    if(!info) return;
-    var targetX = g.centerX + info.relX;
-    var targetY = g.centerY + info.relY;
-    var dx = ballX - targetX;
-    var dy = ballY - targetY;
-    var dist = Math.sqrt(dx*dx + dy*dy);
-    var inside = dist <= Math.max(0, info.radius - g.ballRadius*0.4);
-    var prev   = gyroInsideFlags[name];
-    if(inside && !prev){
-      gyroInsideFlags[name] = true;
-      handleGyroTargetHit(name);
-    }else if(!inside && prev){
-      gyroInsideFlags[name] = false;
-    }
-  });
-}
-
-function handleGyroTargetHit(dir){
-  if(!isRunning) return;
-  var code = null;
-  if(dir==='front') code='TILT_FRONT';
-  else if(dir==='back') code='TILT_BACK';
-  else if(dir==='left') code='TILT_LEFT';
-  else if(dir==='right') code='TILT_RIGHT';
-  if(!code) return;
-  triggerEvent(code);
-}
-
-/* 화면 방향 고정/해제 (전체화면 실행 시) */
-async function lockCurrentOrientation(){
-  if(!('screen' in window) || !screen.orientation || !screen.orientation.lock) return;
-  var type = null;
-  try{
-    if(screen.orientation.type){
-      if(screen.orientation.type.indexOf('portrait') === 0) type = 'portrait';
-      else if(screen.orientation.type.indexOf('landscape') === 0) type = 'landscape';
-    }
-  }catch(e){}
-  if(!type){
-    var angle = getScreenAngle();
-    type = (angle===0 || angle===180) ? 'portrait' : 'landscape';
-  }
-  try{
-    await screen.orientation.lock(type);
-    orientationLockedType = type;
-  }catch(e){
-    orientationLockedType = null;
-    console.warn('orientation lock failed', e);
-  }
-}
-function unlockOrientation(){
-  try{
-    if(orientationLockedType && screen.orientation && screen.orientation.unlock){
-      screen.orientation.unlock();
-    }
-  }catch(e){}
-  orientationLockedType = null;
-}
-
-/* 테스트 실행 */
 async function startTest(){
   if(isRunning) return;
-  eventPrograms = buildEventPrograms();
-  cancelToken++; queue = [];
+  var program = buildMainProgram();
+  if(!program.length){
+    alert('설정 블록 아래에 실행할 명령을 넣어 주세요.');
+    return false;
+  }
+  runCancelToken++;
+  var token = runCancelToken;
   isFullscreenRun = false;
   setRunning(true);
-  var ok = await startGyro('panel');
-  if(!ok){
-    log('⚠️ 자이로 센서를 사용할 수 없어 기울기 이벤트는 동작하지 않습니다.');
-  }else{
-    log('▶ 테스트 실행 (자이로/버튼 이벤트 대기)');
+  if(window.XROBO_PREVIEW) window.XROBO_PREVIEW.showOverlay(false);
+  log('▶ 테스트 실행 시작');
+  try{
+    await runList(program, token);
+    if(token === runCancelToken) log('✅ 테스트 실행 완료');
+  }catch(err){
+    log('⚠️ 테스트 실행 오류: ' + err);
+  }finally{
+    await finishRun(token);
   }
+  return true;
 }
 
-/* 전체화면 실행 */
-var overlay = document.getElementById('playOverlay');
 async function startFullRun(){
   if(isRunning) return;
-  eventPrograms = buildEventPrograms();
-  cancelToken++; queue = [];
+  var program = buildMainProgram();
+  if(!program.length){
+    alert('설정 블록 아래에 실행할 명령을 넣어 주세요.');
+    return false;
+  }
+  runCancelToken++;
+  var token = runCancelToken;
   isFullscreenRun = true;
   setRunning(true);
-
-  overlay.classList.add('show');
-  overlay.setAttribute('aria-hidden','false');
+  if(window.XROBO_PREVIEW) window.XROBO_PREVIEW.showOverlay(true);
   try{
-    if(overlay.requestFullscreen) await overlay.requestFullscreen();
-  }catch(e){}
+    if(document.getElementById('playOverlay').requestFullscreen){
+      await document.getElementById('playOverlay').requestFullscreen();
+    }
+  }catch(_){}
+  log('▶ 전체화면 실행 시작');
+  try{
+    await runList(program, token);
+    if(token === runCancelToken) log('✅ 전체화면 실행 완료');
+  }catch(err){
+    log('⚠️ 전체화면 실행 오류: ' + err);
+  }finally{
+    await finishRun(token);
+  }
+  return true;
+}
 
-  await lockCurrentOrientation();
-
-  var ok = await startGyro('overlay');
-  if(!ok){
-    log('⚠️ 자이로 센서를 사용할 수 없어 기울기 이벤트는 동작하지 않습니다.');
-  }else{
-    log('▶ 전체화면 실행 시작 (자이로 이벤트 대기)');
+async function stopRun(){
+  if(!isRunning) return;
+  runCancelToken++;
+  setRunning(false);
+  try{ await sendRaw('S'); }catch(_){}
+  log('⏹ 실행 정지');
+  if(isFullscreenRun){
+    isFullscreenRun = false;
+    if(window.XROBO_PREVIEW) window.XROBO_PREVIEW.showOverlay(false);
+    try{
+      if(document.fullscreenElement && document.exitFullscreen){
+        await document.exitFullscreen();
+      }
+    }catch(_){}
   }
 }
 
-/* 정지 */
-async function stopRun(){
-  cancelToken++; queue=[];
-  setRunning(false);
-  stopGyro();
-  overlay.classList.remove('show');
-  overlay.setAttribute('aria-hidden','true');
-  isFullscreenRun = false;
-  try{
-    if(document.fullscreenElement) await document.exitFullscreen();
-  }catch(e){}
-  unlockOrientation();
-  try{
-    if(writeChar) writeChar.writeValue(enc('S\n'));
-  }catch(e){}
-  setGyroInfo('all', GYRO_GUIDE_TEXT);
-  showGyroEventLabel('-');
-}
+btnTest.onclick = function(){ if(!isRunning) startTest(); };
+btnRun.onclick  = function(){ if(!isRunning) startFullRun(); else stopRun(); };
 
-btnTest.onclick = ()=> { if(!isRunning) startTest(); };
-btnRun.onclick  = ()=> { if(!isRunning) startFullRun(); else stopRun(); };
-
-document.addEventListener('fullscreenchange', ()=>{
-  if (isFullscreenRun && !document.fullscreenElement){
+document.addEventListener('fullscreenchange', function(){
+  if(isFullscreenRun && !document.fullscreenElement){
+    stopRun();
+  }
+  applyHeaderHeight();
+  if(window.XROBO_PREVIEW) window.XROBO_PREVIEW.resize();
+});
+document.addEventListener('keydown', function(e){
+  if(isFullscreenRun && e.key === 'Escape'){
     stopRun();
   }
 });
-document.addEventListener('keydown', (e)=>{
-  if (isFullscreenRun && e.key === 'Escape') stopRun();
-});
 
-/* 전체화면에서 두 번 탭하면 종료 */
 (function(){
   var overlayEl = document.getElementById('playOverlay');
   if(!overlayEl) return;
-  var lastTapTime = 0;
-  overlayEl.addEventListener('pointerdown', function(e){
-    var now = e.timeStamp || Date.now();
-    if(now - lastTapTime <= 300){
-      stopRun();
-      lastTapTime = 0;
-    }else{
-      lastTapTime = now;
-    }
-  }, {passive:true});
   overlayEl.addEventListener('dblclick', function(){
     stopRun();
   }, {passive:true});
 })();
 
-/* ================= 음성 인식 (기존 구조 유지용, 실제 자이로와는 독립) ================= */
-var voiceBtn = document.getElementById('voiceBtn');
-var voiceStatus = document.getElementById('voiceStatus');
-var voiceText = document.getElementById('voiceText');
-
-var overlayVoiceBtn = document.getElementById('overlayVoiceBtn');
-var overlayVoiceStatus = document.getElementById('overlayVoiceStatus');
-var overlayVoiceText = document.getElementById('overlayVoiceText');
-
-var recognition = null;
-var recognizing = false;
-var listenTimer = null;
-var lastTranscript = '';
-
-function updateVoiceUI(state, msg){
-  if(voiceStatus){
-    if(state === 'idle')      voiceStatus.textContent = '대기 중';
-    else if(state === 'listening') voiceStatus.textContent = '듣는 중... (최대 3초)';
-    else if(state === 'thinking')  voiceStatus.textContent = '인식 중...';
-    else if(state === 'done')      voiceStatus.textContent = '인식 완료';
-    else if(state === 'error')     voiceStatus.textContent = '오류';
-  }
-  if(overlayVoiceStatus){
-    if(state === 'idle')      overlayVoiceStatus.textContent = '대기 중';
-    else if(state === 'listening') overlayVoiceStatus.textContent = '듣는 중... (최대 3초)';
-    else if(state === 'thinking')  overlayVoiceStatus.textContent = '인식 중...';
-    else if(state === 'done')      overlayVoiceStatus.textContent = '인식 완료';
-    else if(state === 'error')     overlayVoiceStatus.textContent = '오류';
-  }
-  if(typeof msg === 'string'){
-    if(voiceText) voiceText.textContent = msg;
-    if(overlayVoiceText) overlayVoiceText.textContent = msg;
-  }
-}
-
-function ensureSpeechRecognition(){
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){
-    return null;
-  }
-  if(!recognition){
-    recognition = new SR();
-    recognition.lang = 'ko-KR';
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 3;
-
-    recognition.onstart = function(){
-      recognizing = true;
-      if(voiceBtn) voiceBtn.classList.add('listening');
-      if(overlayVoiceBtn) overlayVoiceBtn.classList.add('listening');
-      updateVoiceUI('listening', '지금 말해 주세요...');
-    };
-    recognition.onerror = function(e){
-      recognizing = false;
-      if(voiceBtn) voiceBtn.classList.remove('listening');
-      if(overlayVoiceBtn) overlayVoiceBtn.classList.remove('listening');
-      clearTimeout(listenTimer);
-      log('❌ 음성 인식 오류: '+ (e && e.error ? e.error : e));
-      updateVoiceUI('error', '음성 인식 오류가 발생했습니다. 다시 시도해 주세요.');
-    };
-    recognition.onresult = function(event){
-      var interim='', finalText='';
-      for(var i=0;i<event.results.length;i++){
-        var res = event.results[i];
-        if(res.isFinal) finalText += res[0].transcript;
-        else interim += res[0].transcript;
-      }
-      var display = finalText || interim;
-      if(display){
-        updateVoiceUI('listening', display);
-        lastTranscript = display;
-      }
-    };
-    recognition.onend = function(){
-      recognizing = false;
-      if(voiceBtn) voiceBtn.classList.remove('listening');
-      if(overlayVoiceBtn) overlayVoiceBtn.classList.remove('listening');
-      clearTimeout(listenTimer);
-      if(lastTranscript){
-        updateVoiceUI('done', lastTranscript);
-        handleVoiceCommand(lastTranscript);
-      }else{
-        updateVoiceUI('idle', '인식된 문장이 없습니다. 다시 시도해 주세요.');
-      }
-    };
-  }
-  return recognition;
-}
-
-function startVoiceRecognition(){
-  var rec = ensureSpeechRecognition();
-  if(!rec) return;
-  if(recognizing){
-    try{ rec.stop(); }catch(e){}
-    return;
-  }
-  lastTranscript = '';
-  try{
-    rec.start();
-    updateVoiceUI('listening', '지금 말해 주세요...');
-    listenTimer = setTimeout(function(){
-      try{ rec.stop(); }catch(e){}
-    }, 3000);
-  }catch(e){
-    log('⚠️ 음성 인식 시작 실패: '+e);
-    updateVoiceUI('error', '음성 인식을 시작할 수 없습니다.');
-  }
-}
-if(voiceBtn) voiceBtn.addEventListener('click', startVoiceRecognition);
-if(overlayVoiceBtn) overlayVoiceBtn.addEventListener('click', startVoiceRecognition);
-
-function handleVoiceCommand(text){
-  if(!text){
-    log('🎙 인식 결과가 비어 있습니다.');
-    return;
-  }
-  log('🎙 인식 문장: "'+ text + '"');
-}
-
 /* ================= 끝 ================= */
+
 </script>
 
 <script id="xrobo-hsplit-script">
@@ -2303,9 +2074,12 @@ function handleVoiceCommand(text){
 })();
 </script>
 
+
 <script id="xrobo-draw-path-script">
 (function(){
   var $id = function(id){ return document.getElementById(id); };
+  var helpers = window.XROBO_RENDER_HELPERS;
+  var previewApi = window.XROBO_PREVIEW;
 
   var drawBtn = $id('drawModeBtn');
   var overlay = $id('drawOverlay');
@@ -2319,7 +2093,7 @@ function handleVoiceCommand(text){
   var clearBtn = $id('drawClearBtn');
   var executeBtn = $id('drawExecuteBtn');
   var closeBtn = $id('drawCloseBtn');
-  if(!drawBtn || !overlay || !stage || !canvas || !previewEl || !helpBtn || !helpPanel || !helpCloseBtn || !clearBtn || !executeBtn || !closeBtn){
+  if(!drawBtn || !overlay || !stage || !canvas || !previewEl || !helpBtn || !helpPanel || !helpCloseBtn || !clearBtn || !executeBtn || !closeBtn || !helpers){
     return;
   }
 
@@ -2340,16 +2114,40 @@ function handleVoiceCommand(text){
   var DRAW_DEFAULTS = {
     speed: 10,
     turn90Ms: 800,
-    timeScale: 1.2,
-    minSegLen: 12,
     headingStep: 10,
-    turnInvert: false,
-    maxSegments: 24
+    minTurnDeg: 10,
+    minSegLen: 16,
+    maxSegments: 18,
+    movePxPerSecAtSpeed1: 20
   };
 
   function clamp(v, min, max){
     if(typeof clampVal === 'function') return clampVal(v, min, max);
     return v < min ? min : (v > max ? max : v);
+  }
+
+  function round1(v){
+    return Math.round(v * 10) / 10;
+  }
+
+  function formatDisplayMs(ms){
+    var snapped = snapDisplayMs(ms);
+    return round1(snapped / 1000).toFixed(1) + '초';
+  }
+
+  function snapDisplayMs(ms){
+    if(!isFinite(ms) || ms <= 0) return 300;
+    return Math.max(300, Math.round(ms / 300) * 300);
+  }
+
+  function dist(a, b){
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function copyPoint(p){
+    return { x:p.x, y:p.y, t:p.t };
   }
 
   function getLocalDrawSettings(){
@@ -2376,18 +2174,18 @@ function handleVoiceCommand(text){
     return {
       speed: base.speed,
       turn90Ms: base.turn90Ms,
-      timeScale: DRAW_DEFAULTS.timeScale,
-      minSegLen: DRAW_DEFAULTS.minSegLen,
       headingStep: DRAW_DEFAULTS.headingStep,
-      turnInvert: DRAW_DEFAULTS.turnInvert,
-      maxSegments: DRAW_DEFAULTS.maxSegments
+      minTurnDeg: DRAW_DEFAULTS.minTurnDeg,
+      minSegLen: DRAW_DEFAULTS.minSegLen,
+      maxSegments: DRAW_DEFAULTS.maxSegments,
+      movePxPerSecAtSpeed1: DRAW_DEFAULTS.movePxPerSecAtSpeed1
     };
   }
 
   function updateHelpCurrent(){
     if(!helpCurrentEl) return;
     var cfg = getDrawConfig();
-    helpCurrentEl.textContent = '현재 기본값: 속도 ' + cfg.speed + ' / 90° 회전시간 ' + cfg.turn90Ms + 'ms';
+    helpCurrentEl.textContent = '현재 설정: 속도 ' + cfg.speed + ' / 90° 회전시간 ' + cfg.turn90Ms + 'ms';
   }
 
   function showHelpPanel(){
@@ -2457,19 +2255,14 @@ function handleVoiceCommand(text){
     drawState.analysis = null;
     setPreview('');
     renderDrawCanvas();
+    if(previewApi) previewApi.clear();
   }
 
   function resizeDrawCanvas(){
-    var rect = stage.getBoundingClientRect();
-    if(!rect.width || !rect.height) return;
-    var dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawState.cssWidth = rect.width;
-    drawState.cssHeight = rect.height;
+    var fit = helpers.fitCanvas(canvas);
+    if(!fit) return;
+    drawState.cssWidth = fit.w;
+    drawState.cssHeight = fit.h;
   }
 
   function canvasPointFromEvent(e){
@@ -2481,16 +2274,381 @@ function handleVoiceCommand(text){
     };
   }
 
-  function dist(a, b){
-    var dx = b.x - a.x;
-    var dy = b.y - a.y;
-    return Math.sqrt(dx*dx + dy*dy);
-  }
-
   function shouldAppendPoint(last, p){
     var d = dist(last, p);
     var dt = p.t - last.t;
     return d >= 2.5 || dt >= 24;
+  }
+
+  function filterPoints(points, minDist){
+    if(!points || points.length < 2) return (points || []).slice();
+    var out = [copyPoint(points[0])];
+    for(var i=1;i<points.length;i++){
+      var p = points[i];
+      var prev = out[out.length - 1];
+      if(dist(prev, p) >= minDist || i === points.length - 1){
+        out.push(copyPoint(p));
+      }else{
+        out[out.length - 1] = copyPoint(p);
+      }
+    }
+    return out;
+  }
+
+  function smoothPoints(points, radius){
+    if(!points || points.length <= 2) return (points || []).map(copyPoint);
+    var out = [];
+    for(var i=0;i<points.length;i++){
+      var sx = 0, sy = 0, st = 0, count = 0;
+      for(var j=Math.max(0, i-radius); j<=Math.min(points.length-1, i+radius); j++){
+        sx += points[j].x;
+        sy += points[j].y;
+        st += points[j].t;
+        count++;
+      }
+      out.push({
+        x: sx / count,
+        y: sy / count,
+        t: st / count
+      });
+    }
+    out[0] = copyPoint(points[0]);
+    out[out.length-1] = copyPoint(points[points.length-1]);
+    return out;
+  }
+
+  function perpendicularDistance(p, p1, p2){
+    var x = p.x, y = p.y;
+    var x1 = p1.x, y1 = p1.y;
+    var x2 = p2.x, y2 = p2.y;
+    var dx = x2 - x1;
+    var dy = y2 - y1;
+    if(dx === 0 && dy === 0) return Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
+    var t = ((x - x1) * dx + (y - y1) * dy) / (dx*dx + dy*dy);
+    var px = x1 + t * dx;
+    var py = y1 + t * dy;
+    var ddx = x - px;
+    var ddy = y - py;
+    return Math.sqrt(ddx*ddx + ddy*ddy);
+  }
+
+  function rdp(points, epsilon){
+    if(!points || points.length < 3) return (points || []).map(copyPoint);
+    var first = points[0];
+    var last = points[points.length - 1];
+    var index = -1;
+    var dmax = 0;
+    for(var i=1;i<points.length-1;i++){
+      var d = perpendicularDistance(points[i], first, last);
+      if(d > dmax){
+        index = i;
+        dmax = d;
+      }
+    }
+    if(dmax > epsilon && index > 0){
+      var left = rdp(points.slice(0, index + 1), epsilon);
+      var right = rdp(points.slice(index), epsilon);
+      return left.slice(0, -1).concat(right);
+    }
+    return [copyPoint(first), copyPoint(last)];
+  }
+
+  function headingFromVector(dx, dy){
+    var deg = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if(deg < 0) deg += 360;
+    return deg;
+  }
+
+  function headingBetween(a, b){
+    return headingFromVector(b.x - a.x, b.y - a.y);
+  }
+
+  function snapHeading(deg, step){
+    var snapped = Math.round(deg / step) * step;
+    snapped = ((snapped % 360) + 360) % 360;
+    return snapped;
+  }
+
+  function signedTurnDelta(fromDeg, toDeg){
+    var diff = ((toDeg - fromDeg + 540) % 360) - 180;
+    if(diff === -180) diff = 180;
+    return diff;
+  }
+
+  function makeGeomSegment(start, end, startIndex, endIndex, cfg){
+    var rawHeading = headingBetween(start, end);
+    return {
+      start: copyPoint(start),
+      end: copyPoint(end),
+      startIndex: startIndex,
+      endIndex: endIndex,
+      length: dist(start, end),
+      rawHeading: rawHeading,
+      heading: snapHeading(rawHeading, cfg.headingStep)
+    };
+  }
+
+  function buildDisplaySegments(points, cfg){
+    if(!points || points.length < 2) return [];
+    var provisional = [];
+    var s = 0;
+    var e = 1;
+    var currentHeading = headingBetween(points[s], points[e]);
+
+    for(var i=2;i<points.length;i++){
+      var candidateHeading = headingBetween(points[s], points[i]);
+      var delta = Math.abs(signedTurnDelta(currentHeading, candidateHeading));
+      if(delta < cfg.minTurnDeg){
+        e = i;
+        currentHeading = candidateHeading;
+      }else{
+        provisional.push(makeGeomSegment(points[s], points[e], s, e, cfg));
+        s = e;
+        e = i;
+        currentHeading = headingBetween(points[s], points[e]);
+      }
+    }
+    provisional.push(makeGeomSegment(points[s], points[e], s, e, cfg));
+
+    var merged = [];
+    for(var k=0;k<provisional.length;k++){
+      var seg = provisional[k];
+      if(seg.length < cfg.minSegLen){
+        if(merged.length){
+          var prev = merged[merged.length - 1];
+          prev.end = copyPoint(seg.end);
+          prev.endIndex = seg.endIndex;
+          prev.length = dist(prev.start, prev.end);
+          prev.rawHeading = headingBetween(prev.start, prev.end);
+          prev.heading = snapHeading(prev.rawHeading, cfg.headingStep);
+        }
+        continue;
+      }
+
+      if(!merged.length){
+        merged.push(seg);
+        continue;
+      }
+
+      var last = merged[merged.length - 1];
+      var delta2 = Math.abs(signedTurnDelta(last.heading, seg.heading));
+      if(delta2 < cfg.minTurnDeg){
+        last.end = copyPoint(seg.end);
+        last.endIndex = seg.endIndex;
+        last.length = dist(last.start, last.end);
+        last.rawHeading = headingBetween(last.start, last.end);
+        last.heading = snapHeading(last.rawHeading, cfg.headingStep);
+      }else{
+        merged.push(seg);
+      }
+
+      if(merged.length >= cfg.maxSegments) break;
+    }
+
+    if(!merged.length && points.length >= 2){
+      merged.push(makeGeomSegment(points[0], points[points.length - 1], 0, points.length - 1, cfg));
+    }
+    return merged.slice(0, cfg.maxSegments);
+  }
+
+  function moveDurationMs(length, cfg){
+    var pxPerSec = Math.max(20, cfg.speed * cfg.movePxPerSecAtSpeed1);
+    return Math.max(150, Math.round(length / pxPerSec * 1000));
+  }
+
+  function turnDurationMs(angle, cfg){
+    return Math.max(20, Math.round(cfg.turn90Ms * Math.abs(angle) / 90));
+  }
+
+  function moveLabelPosition(from, to, heading){
+    var mid = {
+      x: (from.x + to.x) / 2,
+      y: (from.y + to.y) / 2
+    };
+    var rad = heading * Math.PI / 180;
+    return {
+      x: mid.x + Math.cos(rad) * 16,
+      y: mid.y + Math.sin(rad) * 16
+    };
+  }
+
+  function turnLabelPosition(point, startHeading, endHeading){
+    var midHeading = startHeading + signedTurnDelta(startHeading, endHeading) / 2;
+    var rad = midHeading * Math.PI / 180;
+    return {
+      x: point.x + Math.sin(rad) * 34,
+      y: point.y - Math.cos(rad) * 34
+    };
+  }
+
+  function compileAnalysis(segments, cfg){
+    var analysis = {
+      displaySegments: [],
+      commands: [],
+      turns: [],
+      renderPathPoints: [],
+      timeline: [],
+      totalDurationMs: 0,
+      finalHeading: 0,
+      previewText: ''
+    };
+    if(!segments || !segments.length) return analysis;
+
+    var currentPoint = { x: segments[0].start.x, y: segments[0].start.y };
+    var currentHeading = 0;
+    analysis.renderPathPoints.push({ x: currentPoint.x, y: currentPoint.y });
+
+    var previewLines = [
+      '속도 ' + cfg.speed + ' / 90° ' + cfg.turn90Ms + 'ms'
+    ];
+
+    for(var i=0;i<segments.length;i++){
+      var seg = segments[i];
+      var targetHeading = seg.heading;
+      var delta = Math.round(signedTurnDelta(currentHeading, targetHeading) / cfg.headingStep) * cfg.headingStep;
+
+      if(Math.abs(delta) >= cfg.minTurnDeg){
+        var turnMs = turnDurationMs(delta, cfg);
+        var turnDisplayMs = snapDisplayMs(turnMs);
+        var right = delta > 0;
+        var turnCmd = {
+          kind: 'turn',
+          dir: right ? 'right' : 'left',
+          delta: delta,
+          angle: Math.abs(delta),
+          speed: cfg.speed,
+          duration: turnMs,
+          displayMs: turnDisplayMs,
+          point: { x: currentPoint.x, y: currentPoint.y },
+          startHeading: currentHeading,
+          endHeading: targetHeading,
+          labelPos: turnLabelPosition(currentPoint, currentHeading, targetHeading)
+        };
+        if(right){
+          turnCmd.s = 'M12 ' + cfg.speed + ' ' + (-cfg.speed) + ' ' + turnMs;
+        }else{
+          turnCmd.s = 'M12 ' + (-cfg.speed) + ' ' + cfg.speed + ' ' + turnMs;
+        }
+        turnCmd.startMs = analysis.totalDurationMs;
+        turnCmd.endMs = turnCmd.startMs + turnMs;
+
+        analysis.turns.push(turnCmd);
+        analysis.commands.push(turnCmd);
+        analysis.timeline.push({
+          kind: 'turn',
+          startMs: turnCmd.startMs,
+          endMs: turnCmd.endMs,
+          point: { x: currentPoint.x, y: currentPoint.y },
+          startHeading: currentHeading,
+          endHeading: targetHeading
+        });
+        analysis.totalDurationMs += turnMs;
+        previewLines.push((right ? '우회전' : '좌회전') + ' ' + Math.abs(delta) + '° / ' + formatDisplayMs(turnDisplayMs));
+      }
+
+      currentHeading = targetHeading;
+      var rad = currentHeading * Math.PI / 180;
+      var nextPoint = {
+        x: currentPoint.x + Math.sin(rad) * seg.length,
+        y: currentPoint.y - Math.cos(rad) * seg.length
+      };
+      var moveMs = moveDurationMs(seg.length, cfg);
+      var moveDisplayMs = snapDisplayMs(moveMs);
+      var moveCmd = {
+        kind: 'move',
+        speed: cfg.speed,
+        length: seg.length,
+        heading: currentHeading,
+        duration: moveMs,
+        displayMs: moveDisplayMs,
+        from: { x: currentPoint.x, y: currentPoint.y },
+        to: { x: nextPoint.x, y: nextPoint.y },
+        labelPos: moveLabelPosition(currentPoint, nextPoint, currentHeading),
+        s: 'M12 ' + cfg.speed + ' ' + cfg.speed + ' ' + moveMs
+      };
+      moveCmd.startMs = analysis.totalDurationMs;
+      moveCmd.endMs = moveCmd.startMs + moveMs;
+
+      analysis.displaySegments.push({
+        renderStart: { x: currentPoint.x, y: currentPoint.y },
+        renderEnd: { x: nextPoint.x, y: nextPoint.y },
+        heading: currentHeading,
+        length: seg.length,
+        displayMs: moveDisplayMs,
+        labelPos: moveCmd.labelPos
+      });
+      analysis.commands.push(moveCmd);
+      analysis.timeline.push({
+        kind: 'move',
+        startMs: moveCmd.startMs,
+        endMs: moveCmd.endMs,
+        from: moveCmd.from,
+        to: moveCmd.to,
+        heading: currentHeading
+      });
+      analysis.totalDurationMs += moveMs;
+      analysis.renderPathPoints.push({ x: nextPoint.x, y: nextPoint.y });
+      previewLines.push('전진 ' + Math.round(seg.length) + 'px / ' + formatDisplayMs(moveDisplayMs));
+
+      currentPoint = nextPoint;
+    }
+
+    analysis.finalHeading = currentHeading;
+    analysis.previewText = previewLines.join('\n');
+    return analysis;
+  }
+
+  function analyzeCurrentDrawing(){
+    if(drawState.points.length < 2){
+      drawState.analysis = null;
+      setPreview('');
+      renderDrawCanvas();
+      if(previewApi) previewApi.clear();
+      return null;
+    }
+
+    var cfg = getDrawConfig();
+    var filtered = filterPoints(drawState.points, 3);
+    var smooth = smoothPoints(filtered, 2);
+    var epsilon = Math.max(7, Math.min(18, Math.min(drawState.cssWidth || 320, drawState.cssHeight || 320) * 0.018));
+    var simplified = rdp(smooth, epsilon);
+    if(simplified.length < 2){
+      simplified = [smooth[0], smooth[smooth.length - 1]];
+    }
+
+    var segments = buildDisplaySegments(simplified, cfg);
+    if(!segments.length && simplified.length >= 2){
+      segments = [makeGeomSegment(simplified[0], simplified[simplified.length - 1], 0, simplified.length - 1, cfg)];
+    }
+
+    var analysis = compileAnalysis(segments, cfg);
+    drawState.analysis = analysis;
+    setPreview(analysis.previewText || '');
+    renderDrawCanvas();
+    if(previewApi) previewApi.setAnalysis(analysis);
+    return analysis;
+  }
+
+  function renderDrawCanvas(){
+    if(!drawState.cssWidth || !drawState.cssHeight){
+      resizeDrawCanvas();
+    }
+    var w = drawState.cssWidth;
+    var h = drawState.cssHeight;
+    if(!w || !h) return;
+
+    helpers.drawBaseScene(ctx, w, h);
+
+    if(!drawState.points.length){
+      helpers.drawHint(ctx, w, h, '선으로 경로를 그려 주세요', '위쪽이 시작 방향입니다.');
+      return;
+    }
+
+    helpers.drawRawPath(ctx, drawState.points);
+
+    if(drawState.analysis){
+      helpers.drawAnalysisScene(ctx, drawState.analysis, { showLabels:true });
+    }
   }
 
   function onDrawPointerDown(e){
@@ -2502,6 +2660,7 @@ function handleVoiceCommand(text){
     setPreview('');
     if(drawState.points.length){
       drawState.points = [];
+      if(previewApi) previewApi.clear();
     }
     drawState.drawing = true;
     drawState.pointerId = e.pointerId;
@@ -2543,294 +2702,6 @@ function handleVoiceCommand(text){
     analyzeCurrentDrawing();
   }
 
-  function filterPoints(points, minDist){
-    if(!points || points.length < 2) return (points || []).slice();
-    var out = [points[0]];
-    for(var i=1;i<points.length;i++){
-      var p = points[i];
-      var prev = out[out.length - 1];
-      if(dist(prev, p) >= minDist || i === points.length - 1){
-        out.push(p);
-      }else{
-        out[out.length - 1] = { x:p.x, y:p.y, t:p.t };
-      }
-    }
-    return out;
-  }
-
-  function smoothPoints(points, radius){
-    if(!points || points.length <= 2) return (points || []).slice();
-    var out = [];
-    for(var i=0;i<points.length;i++){
-      var sx = 0, sy = 0, count = 0;
-      for(var j=Math.max(0, i-radius); j<=Math.min(points.length-1, i+radius); j++){
-        sx += points[j].x;
-        sy += points[j].y;
-        count++;
-      }
-      out.push({
-        x: sx / count,
-        y: sy / count,
-        t: points[i].t
-      });
-    }
-    if(out.length){
-      out[0] = { x:points[0].x, y:points[0].y, t:points[0].t };
-      out[out.length-1] = { x:points[points.length-1].x, y:points[points.length-1].y, t:points[points.length-1].t };
-    }
-    return out;
-  }
-
-  function perpendicularDistance(p, p1, p2){
-    var x = p.x, y = p.y;
-    var x1 = p1.x, y1 = p1.y;
-    var x2 = p2.x, y2 = p2.y;
-    var dx = x2 - x1;
-    var dy = y2 - y1;
-    if(dx === 0 && dy === 0) return Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-    var t = ((x - x1) * dx + (y - y1) * dy) / (dx*dx + dy*dy);
-    var px = x1 + t * dx;
-    var py = y1 + t * dy;
-    var ddx = x - px;
-    var ddy = y - py;
-    return Math.sqrt(ddx*ddx + ddy*ddy);
-  }
-
-  function rdp(points, epsilon){
-    if(!points || points.length < 3) return (points || []).slice();
-    var first = points[0];
-    var last = points[points.length - 1];
-    var index = -1;
-    var dmax = 0;
-    for(var i=1;i<points.length-1;i++){
-      var d = perpendicularDistance(points[i], first, last);
-      if(d > dmax){
-        index = i;
-        dmax = d;
-      }
-    }
-    if(dmax > epsilon && index > 0){
-      var left = rdp(points.slice(0, index + 1), epsilon);
-      var right = rdp(points.slice(index), epsilon);
-      return left.slice(0, -1).concat(right);
-    }
-    return [first, last];
-  }
-
-  function headingFromVector(dx, dy){
-    var deg = Math.atan2(dx, -dy) * 180 / Math.PI;
-    if(deg < 0) deg += 360;
-    return deg;
-  }
-
-  function snapHeading(deg, step){
-    var snapped = Math.round(deg / step) * step;
-    snapped = ((snapped % 360) + 360) % 360;
-    return snapped;
-  }
-
-  function signedTurnDelta(fromDeg, toDeg){
-    var diff = ((toDeg - fromDeg + 540) % 360) - 180;
-    if(diff === -180) diff = 180;
-    return diff;
-  }
-
-  function buildSegments(points, cfg){
-    var segs = [];
-    if(!points || points.length < 2) return segs;
-    for(var i=1;i<points.length;i++){
-      var a = points[i-1];
-      var b = points[i];
-      var len = dist(a, b);
-      if(len < cfg.minSegLen) continue;
-      var dur = Math.max(40, Math.round(b.t - a.t));
-      var heading = snapHeading(headingFromVector(b.x - a.x, b.y - a.y), cfg.headingStep);
-      var seg = {
-        start: a,
-        end: b,
-        length: len,
-        durationMs: dur,
-        heading: heading
-      };
-      var prev = segs[segs.length - 1];
-      if(prev && Math.abs(signedTurnDelta(prev.heading, seg.heading)) < 1){
-        prev.end = b;
-        prev.length += len;
-        prev.durationMs += dur;
-      }else{
-        segs.push(seg);
-      }
-      if(segs.length >= cfg.maxSegments) break;
-    }
-    return segs;
-  }
-
-  function makeTurnCommand(delta, cfg){
-    if(!delta) return null;
-    var duration = Math.max(20, Math.round(cfg.turn90Ms * Math.abs(delta) / 90));
-    var speed = cfg.speed;
-    var right = delta > 0;
-    var m1, m2;
-    if(right){
-      m1 = cfg.turnInvert ? -speed : speed;
-      m2 = cfg.turnInvert ? speed : -speed;
-    }else{
-      m1 = cfg.turnInvert ? speed : -speed;
-      m2 = cfg.turnInvert ? -speed : speed;
-    }
-    return {
-      kind: 'turn',
-      duration: duration,
-      s: 'M12 ' + m1 + ' ' + m2 + ' ' + duration
-    };
-  }
-
-  function compileAnalysis(segments, cfg){
-    var analysis = {
-      segments: segments || [],
-      commands: []
-    };
-    if(!segments || !segments.length) return analysis;
-
-    var heading = 0;
-    for(var i=0;i<segments.length;i++){
-      var seg = segments[i];
-      var delta = signedTurnDelta(heading, seg.heading);
-      delta = Math.round(delta / cfg.headingStep) * cfg.headingStep;
-
-      if(Math.abs(delta) >= cfg.headingStep / 2){
-        var turnCmd = makeTurnCommand(delta, cfg);
-        if(turnCmd) analysis.commands.push(turnCmd);
-      }
-
-      var moveDuration = clamp(Math.round(seg.durationMs * cfg.timeScale), 120, 5000);
-      analysis.commands.push({
-        kind: 'move',
-        duration: moveDuration,
-        s: 'M12 ' + cfg.speed + ' ' + cfg.speed + ' ' + moveDuration
-      });
-
-      heading = seg.heading;
-    }
-    analysis.previewText = analysis.commands.map(function(cmd){ return cmd.s; }).join('\n');
-    return analysis;
-  }
-
-  function analyzeCurrentDrawing(){
-    if(drawState.points.length < 2){
-      drawState.analysis = null;
-      setPreview('');
-      renderDrawCanvas();
-      return null;
-    }
-
-    var cfg = getDrawConfig();
-    var filtered = filterPoints(drawState.points, 3);
-    var smooth = smoothPoints(filtered, 2);
-    var epsilon = Math.max(7, Math.min(18, Math.min(drawState.cssWidth || 320, drawState.cssHeight || 320) * 0.018));
-    var simplified = rdp(smooth, epsilon);
-    if(simplified.length < 2){
-      simplified = [smooth[0], smooth[smooth.length - 1]];
-    }
-
-    var segments = buildSegments(simplified, cfg);
-    if(!segments.length && simplified.length >= 2){
-      var fallbackLen = dist(simplified[0], simplified[simplified.length - 1]);
-      if(fallbackLen >= cfg.minSegLen){
-        segments = buildSegments([simplified[0], simplified[simplified.length - 1]], cfg);
-      }
-    }
-
-    var analysis = compileAnalysis(segments, cfg);
-    drawState.analysis = analysis;
-    renderDrawCanvas();
-    setPreview(analysis && analysis.previewText ? analysis.previewText : '');
-    return analysis;
-  }
-
-  function drawGrid(w, h){
-    ctx.clearRect(0, 0, w, h);
-
-    ctx.save();
-    ctx.strokeStyle = 'rgba(148,163,184,.12)';
-    ctx.lineWidth = 1;
-    var step = Math.max(26, Math.round(Math.min(w, h) / 10));
-    for(var x=step; x<w; x+=step){
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for(var y=step; y<h; y+=step){
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-
-    var midX = w / 2;
-    ctx.strokeStyle = 'rgba(96,165,250,.18)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(midX, 18);
-    ctx.lineTo(midX, 62);
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(96,165,250,.22)';
-    ctx.beginPath();
-    ctx.moveTo(midX, 12);
-    ctx.lineTo(midX - 9, 30);
-    ctx.lineTo(midX + 9, 30);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawPolyline(points, color, width){
-    if(!points || points.length < 2) return;
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for(var i=1;i<points.length;i++){
-      ctx.lineTo(points[i].x, points[i].y);
-    }
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawEndpoints(points){
-    if(!points || !points.length) return;
-    var first = points[0];
-    var last = points[points.length - 1];
-    ctx.save();
-    ctx.fillStyle = '#22c55e';
-    ctx.beginPath();
-    ctx.arc(first.x, first.y, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(last.x, last.y, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function renderDrawCanvas(){
-    var w = drawState.cssWidth;
-    var h = drawState.cssHeight;
-    if(!w || !h) return;
-    drawGrid(w, h);
-
-    if(!drawState.points.length) return;
-
-    drawPolyline(drawState.points, 'rgba(251,191,36,.96)', 3.5);
-    drawEndpoints(drawState.points);
-  }
-
   function sleep(ms){
     return new Promise(function(resolve){ setTimeout(resolve, ms); });
   }
@@ -2848,6 +2719,10 @@ function handleVoiceCommand(text){
     window.isDrawExecuting = false;
     updateExecuteButton();
     syncDrawButtonState();
+    if(previewApi){
+      previewApi.stopAnimation();
+      if(drawState.analysis) previewApi.setAnalysis(drawState.analysis);
+    }
     safeStopRobot();
     try{ if(typeof log === 'function') log('⏹ 손그림 실행 정지'); }catch(_){}
   }
@@ -2872,6 +2747,10 @@ function handleVoiceCommand(text){
     window.isDrawExecuting = true;
     updateExecuteButton();
     syncDrawButtonState();
+    if(previewApi){
+      previewApi.setAnalysis(analysis);
+      previewApi.startAnimation(analysis);
+    }
 
     var token = ++drawState.execToken;
     try{
@@ -2895,6 +2774,10 @@ function handleVoiceCommand(text){
       window.isDrawExecuting = false;
       updateExecuteButton();
       syncDrawButtonState();
+      if(previewApi){
+        previewApi.stopAnimation();
+        previewApi.setAnalysis(analysis);
+      }
     }
   }
 
@@ -2906,7 +2789,7 @@ function handleVoiceCommand(text){
   });
   closeBtn.addEventListener('click', closeDrawOverlay);
   clearBtn.addEventListener('click', clearDrawPath);
-  executeBtn.addEventListener('click', function(){ executeDrawCommands(); });
+  executeBtn.addEventListener('click', executeDrawCommands);
 
   canvas.addEventListener('pointerdown', onDrawPointerDown);
   canvas.addEventListener('pointermove', onDrawPointerMove);
@@ -2993,8 +2876,11 @@ function handleVoiceCommand(text){
 
   updateExecuteButton();
   syncDrawButtonState();
+  updateHelpCurrent();
+  renderDrawCanvas();
 })();
 </script>
+
 
 </body>
 </html>
